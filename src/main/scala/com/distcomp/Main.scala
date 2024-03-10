@@ -16,48 +16,54 @@ import scala.util.matching.Regex
 sealed trait Message
 case class SetEdges(edges: Map[ActorRef[Message], Int]) extends Message
 case object StartSimulation extends Message
-case class SendMessage(content: String, from: ActorRef[Message]) extends Message // Include sender in the message
+case class SendMessage(content: String, timestamp: Int, from: ActorRef[Message]) extends Message
+case class UpdateClock(receivedTimestamp: Int) extends Message // This is for internal clock updates
 
 // Node Actor implementation with hello message tracking
 object NodeActor {
-  def apply(): Behavior[Message] = Behaviors.receive { (context, message) =>
-    message match {
-      case SetEdges(edges) =>
-        // Initialize with no neighbors having sent a hello message
-        active(edges, Set.empty)
-
-      case _ => Behaviors.unhandled
-    }
+  def apply(): Behavior[Message] = Behaviors.setup { context =>
+    // Start with an initial timestamp of 0
+    active(Map.empty, Set.empty, 0)
   }
 
-  // Active behavior with tracking of received hello messages
-  private def active(edges: Map[ActorRef[Message], Int], hellosReceived: Set[ActorRef[Message]]): Behavior[Message] =
+  // Updated behavior to include the logical clock
+  private def active(edges: Map[ActorRef[Message], Int], hellosReceived: Set[ActorRef[Message]], timestamp: Int): Behavior[Message] =
     Behaviors.receive { (context, message) =>
       message match {
-        case SendMessage(content, from) =>
-          // Log received message and continue
-          context.log.info(s"Node ${context.self.path.name} received message: $content from ${from.path.name}")
+        case SetEdges(edges) =>
+          // Initialize with the provided edges and no hellos, keeping the current timestamp
+          active(edges, Set.empty, timestamp)
+
+        case SendMessage(content, msgTimestamp, from) =>
+          // Update the clock upon receiving a message: max(local clock, received clock) + 1
+          val newTimestamp = math.max(timestamp, msgTimestamp) + 1
+          context.log.info(s"Node ${context.self.path.name} received message: $content with timestamp $msgTimestamp from ${from.path.name}, local timestamp updated to $newTimestamp")
           if (content == "hello") {
-            // Add sender to received hello messages set
             val updatedHellosReceived = hellosReceived + from
             if (updatedHellosReceived.size == edges.size) {
-              // All neighbors have sent a hello message, stop sending random messages
-              context.log.info(s"Node ${context.self.path.name} has received hello from all neighbors")
-              Behaviors.same // Or define a new behavior if needed
-            } else {
-              active(edges, updatedHellosReceived) // Update state with new set of hellos
+              // All neighbors have sent a hello message
+              context.log.info(s"Node ${context.self.path.name} has received hello from all neighbors, local timestamp is $newTimestamp")
             }
+            // Continue with updated state and timestamp
+            active(edges, updatedHellosReceived, newTimestamp)
           } else {
-            // Handle other messages or ignore
-            Behaviors.same
+            // Continue with updated timestamp
+            active(edges, hellosReceived, newTimestamp)
           }
 
         case StartSimulation =>
-          // Send hello message to all neighbors to start the simulation
+          // Increment clock for this internal event
+          val newTimestamp = timestamp + 1
+          // Send hello message to all neighbors with updated timestamp
           edges.keys.foreach { neighbor =>
-            neighbor ! SendMessage("hello", context.self)
+            neighbor ! SendMessage("hello", newTimestamp, context.self)
           }
-          Behaviors.same
+          active(edges, hellosReceived, newTimestamp)
+
+        case UpdateClock(receivedTimestamp) =>
+          // Update clock based on external event, not expected in current logic but implemented for completeness
+          val newTimestamp = math.max(timestamp, receivedTimestamp) + 1
+          active(edges, hellosReceived, newTimestamp)
 
         case _ => Behaviors.unhandled
       }
