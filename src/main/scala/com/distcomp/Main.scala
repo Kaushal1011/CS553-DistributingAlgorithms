@@ -5,6 +5,8 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
+import jdk.jfr.Timestamp
+
 import java.time
 import scala.io.Source
 import scala.util.matching.Regex
@@ -26,6 +28,20 @@ object NodeActor {
     active(Map.empty, Set.empty, 0)
   }
 
+
+  private def algorithm(edges: Map[ActorRef[Message], Int], timestamp: Int): Behavior[Message] = Behaviors.setup { context =>
+    // Print a log message indicating that the behavior has transitioned to 'algorithm'
+    context.log.info(s"Node ${context.self.path.name} has transitioned to the algorithm behavior with timestamp $timestamp.")
+
+    Behaviors.receiveMessage {
+      // Currently, no message handling is defined. Add cases here if needed in the future.
+      message =>
+        // This is a placeholder; you can decide how to handle unexpected messages, if at all.
+        Behaviors.unhandled
+    }
+  }
+
+
   // Updated behavior to include the logical clock
   private def active(edges: Map[ActorRef[Message], Int], hellosReceived: Set[ActorRef[Message]], timestamp: Int): Behavior[Message] =
     Behaviors.receive { (context, message) =>
@@ -45,9 +61,12 @@ object NodeActor {
             if (updatedHellosReceived.size == edges.size) {
               // All neighbors have sent a hello message
               context.log.info(s"Node ${context.self.path.name} has received hello from all neighbors, local timestamp is $newTimestamp")
+              // start the distributed algorithm simulation
+              algorithm(edges, newTimestamp)
+            }else {
+              // Continue with updated state and timestamp
+              active(edges, updatedHellosReceived, newTimestamp)
             }
-            // Continue with updated state and timestamp
-            active(edges, updatedHellosReceived, newTimestamp)
           } else {
             // Continue with updated timestamp
             active(edges, hellosReceived, newTimestamp)
