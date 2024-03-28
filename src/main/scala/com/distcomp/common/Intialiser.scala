@@ -8,6 +8,10 @@ import scala.util.matching.Regex
 
 object Initialiser {
   def apply(dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean): Behavior[Message] = Behaviors.setup { context =>
+
+    val simulator: ActorRef[SimulatorProtocol.SimulatorMessage] = context.spawn(SimulatorActor(), "simulator")
+    context.log.info("SimulatorActor created")
+
     // Read and parse the DOT file for node information
     val dotFileContent = Source.fromFile(dotFilePath).mkString
     val nodePattern: Regex = """"(\d+)"""".r
@@ -17,7 +21,9 @@ object Initialiser {
     nodePattern.findAllMatchIn(dotFileContent).foreach { m =>
       val nodeId = m.group(1)
       if (!nodeMap.contains(nodeId)) {
-        nodeMap(nodeId) = context.spawn(NodeActor(), s"node-$nodeId")
+        val nodeActor = context.spawn(NodeActor(simulator), s"node-$nodeId")
+        nodeMap(nodeId) = nodeActor
+        simulator ! SimulatorProtocol.RegisterNode(nodeActor, nodeId)
       }
     }
 
