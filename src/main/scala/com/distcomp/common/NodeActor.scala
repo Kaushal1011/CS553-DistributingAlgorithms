@@ -4,6 +4,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 
+import com.distcomp.mutex.RicartaAgarwal
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
   def apply(simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] = Behaviors.setup { context =>
@@ -30,7 +31,7 @@ object NodeActor {
             context.log.info(s"Node ${context.self.path.name} has received 'hello' from all neighbors, local timestamp is $newTimestamp")
             // Notify the SimulatorActor that this node is ready
             simulator ! NodeReady(context.self.path.name)
-            algorithm(edges, newTimestamp)
+            algorithm(edges, newTimestamp, simulator)
           } else {
             active(edges, updatedHellosReceived, newTimestamp, simulator)
           }
@@ -51,7 +52,24 @@ object NodeActor {
     }
 
   // Placeholder for the algorithm-specific behavior
-  private def algorithm(edges: Map[ActorRef[Message], Int], timestamp: Int): Behavior[Message] = Behaviors.receiveMessage {
-    case _ => Behaviors.unhandled // Define algorithm-specific message handling here
-  }
+  def algorithm(edges: Map[ActorRef[Message], Int], timestamp: Int, simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] =
+    Behaviors.receive { (context, message) =>
+      message match {
+        case SwitchToAlgorithm(algorithm) =>
+          context.log.info(s"Node ${context.self.path.name} switching to algorithm $algorithm")
+          algorithm match {
+            case "ricart-agarwala" =>
+              // Directly return the Ricart-Agarwala behavior
+              context.log.info("Switching to Ricart-Agarwala algorithm")
+              RicartaAgarwal(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+            case _ =>
+              context.log.info("Algorithm not recognized")
+              Behaviors.unhandled
+          }
+        case _ =>
+          context.log.info("Message not recognized")
+          Behaviors.unhandled // Define algorithm-specific message handling here
+      }
+    }
+
 }
