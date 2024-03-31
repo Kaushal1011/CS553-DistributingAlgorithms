@@ -10,13 +10,23 @@ case class SendMessage(content: String, timestamp: Int, from: ActorRef[Message])
 case class UpdateClock(receivedTimestamp: Int) extends Message
 
 case object SwitchToDefaultBehavior extends Message
-case class SwitchToAlgorithm(algorithm: String) extends Message
+case class SwitchToAlgorithm(algorithm: String, additionalParams: Map[String, Int]) extends Message
+
+case class SetupNetwork(dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean, simulator: ActorRef[SimulatorProtocol.SimulatorMessage]) extends Message
+
+case object KillAllNodes extends Message
 
 // Messages specific to interaction with the SimulatorActor
 object SimulatorProtocol {
   sealed trait SimulatorMessage extends Message
   final case class NodeReady(nodeId: String) extends SimulatorMessage
   final case class RegisterNode(node: ActorRef[Message], nodeId: String) extends SimulatorMessage
+  final case object NodesKilled extends SimulatorMessage
+
+  case class StartSimulation(simulationPlanFile: String, intialiser: ActorRef[Message]) extends SimulatorMessage
+
+  case object AlgorithmDone extends SimulatorMessage
+
 }
 
 object RicartaAgarwalProtocol{

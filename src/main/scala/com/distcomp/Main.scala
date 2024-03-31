@@ -1,28 +1,26 @@
 package com.distcomp
 
 import akka.actor.typed.ActorSystem
-import com.distcomp.common.Initialiser
-
-
-
+import com.distcomp.common.{SimulatorActor, Intialiser, SimulatorProtocol}
+import scala.io.Source
 
 object Main extends App {
-  // Check for sufficient arguments: the file path, the graph type, and optionally the configuration flag
-  if (args.length > 1) {
-    val dotFilePath = args(0)
-    val isDirected = args(1).toLowerCase match {
-      case "directed" => true
-      case "undirected" => false
-      case _ =>
-        println("Invalid graph type specified. Please use 'directed' or 'undirected'.")
-        sys.exit(1) // Exit if an invalid graph type is specified
-    }
-    val createRing = args.length > 2 && args(2).toLowerCase == "ring"
-    val createClique = args.length > 2 && args(2).toLowerCase == "clique" // Check if the clique argument is provided
-
-    println(s"Starting simulation with ${args(1)} graph from DOT file: $dotFilePath, configuration: ${if(createClique) "clique" else if(createRing) "ring" else "default"}")
-    val system = ActorSystem(Initialiser(dotFilePath, isDirected, createRing, createClique), "DistributedSystemSimulation")
-  } else {
-    println("Please provide the path to the DOT file, the graph type (directed or undirected), and optionally the configuration flag (ring or clique).")
+  if (args.length < 1) {
+    println("Please provide the simulation plan file name located in the resources folder.")
+    System.exit(1)
   }
+
+  private val simulationPlanFileName = args(0)
+  println(s"Starting simulation with plan from JSON file: $simulationPlanFileName")
+
+
+  // Initialize the ActorSystem with the SimulatorActor
+  val system: ActorSystem[SimulatorProtocol.SimulatorMessage] = ActorSystem(SimulatorActor(), "DistributedSystemSimulation")
+
+  // Create the Initialiser actor
+  private val initialiser = system.systemActorOf(Intialiser(system.ref), "Initialiser")
+
+  // Assuming SimulatorActor's apply method accepts an ActorRef to the Initialiser and a String for the simulation plan
+  // Note: Adjust SimulatorActor to appropriately handle the simulation plan content or file path as required
+  system ! SimulatorProtocol.StartSimulation(simulationPlanFileName, initialiser)
 }

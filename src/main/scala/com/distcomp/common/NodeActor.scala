@@ -55,7 +55,7 @@ object NodeActor {
   def algorithm(edges: Map[ActorRef[Message], Int], timestamp: Int, simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] =
     Behaviors.receive { (context, message) =>
       message match {
-        case SwitchToAlgorithm(algorithm) =>
+        case SwitchToAlgorithm(algorithm, additionalParams) =>
           context.log.info(s"Node ${context.self.path.name} switching to algorithm $algorithm")
           algorithm match {
             case "ricart-agarwala" =>

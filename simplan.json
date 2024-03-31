@@ -1,0 +1,14 @@
+{
+  "steps": [
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
+      "algorithm": "ricart-agarwala",
+      "additionalParameters": {
+        "initiators": 5
+      }
+    }
+  ]
+}
