@@ -1,10 +1,8 @@
 package com.distcomp.common
 
-import akka.actor.typed.{ActorRef, Behavior}
-import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
-
 import com.distcomp.mutex.RicartaAgarwal
+import com.distcomp.routing.{ChandyMisra, MerlinSegall, Toueg}
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
   def apply(simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] = Behaviors.setup { context =>
@@ -58,6 +56,17 @@ object NodeActor {
         case SwitchToAlgorithm(algorithm, additionalParams) =>
           context.log.info(s"Node ${context.self.path.name} switching to algorithm $algorithm")
           algorithm match {
+            case "chandy-misra" =>
+              context.log.info("Switching to Routing Algorithm Implementations")
+              context.log.info("Executing Chandy Misra Routing Algorithm ==> ")
+              ChandyMisra(context.self.path.name, edges.keySet, edges, simulator)
+            case "merlin-segall" =>
+              context.log.info("Executing Merlin Segall Routing Algorithm ==> ")
+              MerlinSegall(context.self.path.name, edges)
+            case "toueg" =>
+              context.log.info("Executing Toueg's Routing Algorithm ==> ")
+              Toueg(context.self.path.name, edges)
+
             case "ricart-agarwala" =>
               // Directly return the Ricart-Agarwala behavior
               context.log.info("Switching to Ricart-Agarwala algorithm")
