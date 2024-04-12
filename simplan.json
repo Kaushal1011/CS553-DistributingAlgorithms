@@ -7,7 +7,8 @@
       "createClique": true,
       "algorithm": "ricart-agarwala",
       "additionalParameters": {
-        "initiators": 5
+        "initiators": 5,
+        "additional": 7
       }
     }
   ]

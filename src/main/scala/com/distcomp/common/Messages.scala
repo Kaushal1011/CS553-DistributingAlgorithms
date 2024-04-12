@@ -35,7 +35,7 @@ object RicartaAgarwalProtocol{
 
   case class ReplyCS(timestamp: Long, from:ActorRef[Message]) extends Message
 
-  case class ReleaseCS(timestamp: Long) extends Message
+  case class ReleaseCS(timestamp: Long, from:ActorRef[Message]) extends Message
 
   case object EnterCriticalSection extends Message
 
