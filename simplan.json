@@ -5,6 +5,7 @@
       "isDirected": false,
       "createRing": false,
       "createClique": true,
+      "createBinTree": false,
       "algorithm": "ricart-agarwala",
       "additionalParameters": {
         "initiators": 5,
@@ -17,6 +18,7 @@
       "isDirected": false,
       "createRing": false,
       "createClique": true,
+      "createBinTree": false,
       "algorithm": "ricart-agarwala",
       "additionalParameters": {
         "initiators": 5,

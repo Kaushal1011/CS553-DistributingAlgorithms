@@ -6,7 +6,7 @@ import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 
 import com.distcomp.mutex.RicartaAgarwal
 import com.distcomp.mutex.RicartaAgarwalCarvalhoRoucairol
-import com.distcomp.common.SpanningTreeBuilder
+import com.distcomp.mutex.NodeActorBinaryTree
 
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
@@ -38,6 +38,9 @@ object NodeActor {
           } else {
             active(edges, updatedHellosReceived, newTimestamp, simulator)
           }
+
+        case SetBinaryTreeEdges(parent, tree) =>
+          NodeActorBinaryTree(context.self.path.name, parent, tree, simulator, timestamp)
 
         case StartSimulation =>
           val newTimestamp = timestamp + 1

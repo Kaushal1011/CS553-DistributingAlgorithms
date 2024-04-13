@@ -15,8 +15,8 @@ object Intialiser {
   private def behavior(nodeMap: Map[String, ActorRef[Message]], simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] =
     Behaviors.receive { (context, message) =>
       message match {
-        case SetupNetwork(dotFilePath, isDirected, createRing, createClique, simulator) =>
-          val updatedNodeMap = setupNetwork(context, dotFilePath, isDirected, createRing, createClique, simulator)
+        case SetupNetwork(dotFilePath, isDirected, createRing, createClique,createBinTree, simulator) =>
+          val updatedNodeMap = setupNetwork(context, dotFilePath, isDirected, createRing, createClique, createBinTree, simulator)
           behavior(updatedNodeMap, simulator)
         case KillAllNodes =>
           killAllNodes(context, nodeMap, simulator)
@@ -24,7 +24,7 @@ object Intialiser {
       }
     }
 
-      def setupNetwork(context: ActorContext[Message], dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean, simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Map[String, ActorRef[Message]] = {
+      def setupNetwork(context: ActorContext[Message], dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean, createBinTree: Boolean,simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Map[String, ActorRef[Message]] = {
         // Read and parse the DOT file for node information
         val dotFileContent = Source.fromFile(dotFilePath).mkString
         val nodePattern: Regex = """"(\d+)"""".r
@@ -86,10 +86,33 @@ object Intialiser {
           }
         }
 
-        // Set edges for each node
-        edges.foreach { case (node, es) =>
-          context.log.info(s"Setting edges for ${node.path.name}: $es")
-          node ! SetEdges(es)
+        if (!createBinTree) {
+
+          // Set edges for each node
+          edges.foreach { case (node, es) =>
+            context.log.info(s"Setting edges for ${node.path.name}: $es")
+            node ! SetEdges(es)
+          }
+        }else {
+
+          // Add Binary Tree Structure to the network of nodes
+          val binaryTreeEdges = scala.collection.mutable.Map.empty[ActorRef[Message], Map[ActorRef[Message], Int]]
+          val parentMap = scala.collection.mutable.Map.empty[ActorRef[Message], ActorRef[Message]]
+          val nodesInOrder = nodeMap.toSeq.sortBy(_._1.toInt).map(_._2)
+          for ((node, index) <- nodesInOrder.zipWithIndex) {
+            val leftIndex = (index * 2) + 1
+            val rightIndex = (index * 2) + 2
+            val leftChild = if (leftIndex < nodesInOrder.length) nodesInOrder((index * 2) + 1) else null
+            val rightChild = if (rightIndex < nodesInOrder.length) nodesInOrder((index * 2) + 2) else null
+            if (leftChild != null) parentMap(leftChild) = node
+            if (rightChild != null) parentMap(rightChild) = node
+            binaryTreeEdges(node) = binaryTreeEdges.getOrElse(node, Map()) + (leftChild -> 1) + (rightChild -> 1) // Assuming weight of 1 for binary tree edges
+          }
+
+          edges.foreach { case (node, es) =>
+            context.log.info(s"Setting edges for ${node.path.name}: $es")
+            node ! SetBinaryTreeEdges(parentMap.getOrElse(node,null), binaryTreeEdges.toMap)
+          }
         }
 
         // Start the simulation after a delay to ensure all SetEdges messages have been processed

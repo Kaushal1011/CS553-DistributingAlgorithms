@@ -5,7 +5,21 @@
       "isDirected": false,
       "createRing": false,
       "createClique": false,
+      "createBinTree": false,
       "algorithm": "raymonds-algo",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": true,
+      "algorithm": "agrawal-elabbadi",
       "additionalParameters": {
         "initiators": 5,
         "additional": 0,

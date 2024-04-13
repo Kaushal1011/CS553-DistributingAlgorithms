@@ -18,6 +18,7 @@ object SimulatorActor {
                              isDirected: Boolean,
                              createRing: Boolean,
                              createClique: Boolean,
+                             createBinTree: Boolean,
                              algorithm: String,
                              additionalParameters: Map[String, Int] // Assuming all parameters are integers for simplicity
                            )
@@ -216,7 +217,7 @@ object SimulatorActor {
           else{
             val step = remainingSteps.head
             context.log.info(s"Initialising network for step: $step")
-            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, context.self)
+            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique,step.createBinTree, context.self)
             behaviorAfterInit(Set.empty, Set.empty, remainingSteps, intialiser, 1)
           }
 
@@ -236,7 +237,7 @@ object SimulatorActor {
           val simulationSteps = (json \ "steps").as[List[SimulationStep]] // Define SimulationStep case class as per JSON structure
 
           simulationSteps.headOption.foreach { step =>
-            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, context.self)
+            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, step.createBinTree, context.self)
           }
           behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
 

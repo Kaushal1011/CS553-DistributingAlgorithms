@@ -5,6 +5,7 @@ import akka.actor.typed.ActorRef
 sealed trait Message
 
 case class SetEdges(edges: Map[ActorRef[Message], Int]) extends Message
+case class SetBinaryTreeEdges(parent: ActorRef[Message],tree:  Map[ActorRef[Message], Map[ActorRef[Message], Int]]) extends Message
 case object StartSimulation extends Message
 case class SendMessage(content: String, timestamp: Int, from: ActorRef[Message]) extends Message
 case class UpdateClock(receivedTimestamp: Int) extends Message
@@ -12,7 +13,7 @@ case class UpdateClock(receivedTimestamp: Int) extends Message
 case object SwitchToDefaultBehavior extends Message
 case class SwitchToAlgorithm(algorithm: String, additionalParams: Map[String, Int]) extends Message
 
-case class SetupNetwork(dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean, simulator: ActorRef[SimulatorProtocol.SimulatorMessage]) extends Message
+case class SetupNetwork(dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean, createBinTree: Boolean,simulator: ActorRef[SimulatorProtocol.SimulatorMessage]) extends Message
 
 case object KillAllNodes extends Message
 
