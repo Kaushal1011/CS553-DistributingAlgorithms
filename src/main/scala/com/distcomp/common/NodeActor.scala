@@ -5,6 +5,8 @@ import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 
 import com.distcomp.mutex.RicartaAgarwal
+import com.distcomp.mutex.RicartaAgarwalCarvalhoRoucairol
+
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
   def apply(simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] = Behaviors.setup { context =>
@@ -62,6 +64,10 @@ object NodeActor {
               // Directly return the Ricart-Agarwala behavior
               context.log.info("Switching to Ricart-Agarwala algorithm")
               RicartaAgarwal(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+            case "ra-carvalho" =>
+              // Directly return the Ricarta-Agarwala behavior
+              context.log.info("Switching to Ricart-Agarwala Carvalho-Roucairol algorithm")
+              RicartaAgarwalCarvalhoRoucairol(context.self.path.name, edges.keySet, edges, simulator, timestamp)
             case _ =>
               context.log.info("Algorithm not recognized")
               Behaviors.unhandled
