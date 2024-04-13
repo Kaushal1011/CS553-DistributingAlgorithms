@@ -6,6 +6,7 @@ import akka.actor.typed.scaladsl.Behaviors
 import scala.collection.mutable
 import com.distcomp.common.{Message, NodeActor, SimulatorProtocol, SwitchToDefaultBehavior, UpdateClock}
 import com.distcomp.common.RicartaAgarwalProtocol._
+import com.distcomp.common.MutexProtocol._
 import com.distcomp.common.utils.extractId
 
 object RicartaAgarwal {

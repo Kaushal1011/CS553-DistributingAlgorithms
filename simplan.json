@@ -13,6 +13,18 @@
       }
     },
     {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
+      "algorithm": "ricart-agarwala",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 7,
+        "kill": 1
+      }
+    },
+    {
         "dotFilePath": "ExampleNetwork.dot",
         "isDirected": false,
         "createRing": false,

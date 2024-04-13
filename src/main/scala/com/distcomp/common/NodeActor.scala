@@ -6,6 +6,7 @@ import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 
 import com.distcomp.mutex.RicartaAgarwal
 import com.distcomp.mutex.RicartaAgarwalCarvalhoRoucairol
+import com.distcomp.common.SpanningTreeBuilder
 
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
@@ -68,6 +69,10 @@ object NodeActor {
               // Directly return the Ricarta-Agarwala behavior
               context.log.info("Switching to Ricart-Agarwala Carvalho-Roucairol algorithm")
               RicartaAgarwalCarvalhoRoucairol(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+            case "raymonds-algo" =>
+             context.log.info("Switching to Spanning Tree Behavior, needs tree building")
+             SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+
             case _ =>
               context.log.info("Algorithm not recognized")
               Behaviors.unhandled

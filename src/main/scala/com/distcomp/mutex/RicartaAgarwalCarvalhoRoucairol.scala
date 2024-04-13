@@ -7,7 +7,7 @@ import scala.collection.mutable
 import com.distcomp.common.{Message, NodeActor, SimulatorProtocol, SwitchToDefaultBehavior, UpdateClock}
 import com.distcomp.common.RicartaAgarwalProtocol._
 import com.distcomp.common.utils.extractId
-import com.distcomp.mutex.RicartaAgarwal.active
+import com.distcomp.common.MutexProtocol._
 
 object RicartaAgarwalCarvalhoRoucairol {
   def apply(nodeId: String, nodes: Set[ActorRef[Message]], edges: Map[ActorRef[Message], Int], simulator: ActorRef[SimulatorProtocol.SimulatorMessage], timeStamp: Int): Behavior[Message] = {

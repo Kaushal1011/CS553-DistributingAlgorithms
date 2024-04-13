@@ -3,7 +3,8 @@ package com.distcomp.common
 import akka.actor.typed.{ActorRef, Behavior }
 import akka.actor.typed.scaladsl.{Behaviors, ActorContext}
 import com.distcomp.common.SimulatorProtocol._
-import com.distcomp.common.RicartaAgarwalProtocol._
+import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
+import com.distcomp.common.MutexProtocol._
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
 import scala.util.Random
@@ -81,11 +82,49 @@ object SimulatorActor {
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
 
+      case "raymonds-algo"=>
+        // select a node randomly for spanning tree root and then wait to complete and then start raymonds algorithm
+        context.log.info("Waiting for spanning tree to complete.")
+        nodes.take(1).foreach(node => node ! InitiateSpanningTree)
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
       case _ =>
         context.log.info("Algorithm not recognized.")
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
     }
   }
+
+
+  private def secondStepExecuteAlgorithm(
+                                       step: SimulationStep,
+                                       nodes: Set[ActorRef[Message]],
+                                       numInitiators: Int,
+                                       additional: Int,
+                                       context: ActorContext[SimulatorMessage],
+                                       readyNodes: Set[String],
+                                       simulationSteps: List[SimulationStep],
+                                       intialiser: ActorRef[Message]
+                                     ): Behavior[SimulatorMessage] = {
+
+    step.algorithm match {
+
+      case "raymonds-algo" =>
+        context.log.info("Executing Raymonds algorithm.")
+        nodes.take(numInitiators).foreach(_ ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+    }
+  }
+
+
 
   private def behaviorAfterInit(
                                   nodes: Set[ActorRef[Message]],
@@ -114,6 +153,21 @@ object SimulatorActor {
           }else {
             behaviorAfterInit(nodes, updatedReadyNodes, simulationSteps, intialiser, repliesToWait)
           }
+
+        case SpanningTreeCompletedSimCall(sender,parent,children) =>
+
+          if (sender.path.name == parent.path.name){
+            context.log.info("Spanning tree completed. got message from spanning tree builder. Proceeding to next step.")
+            val step = simulationSteps.head
+            nodes.foreach(_ ! SwitchToAlgorithm(step.algorithm, step.additionalParameters))
+            // wait for some time for all nodes to switch behavior before starting raymonds algorithm
+            Thread.sleep(2000)
+            val numInitiators = step.additionalParameters.getOrElse("initiators", 1)
+            val additional = step.additionalParameters.getOrElse("additional", 0)
+            secondStepExecuteAlgorithm(step, nodes, numInitiators, additional, context, readyNodes, simulationSteps, intialiser)
+          }
+          behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, repliesToWait)
+
         case AlgorithmDone =>
           context.log.info("Algorithm done.")
           context.log.info(s"Replies to wait: $repliesToWait")

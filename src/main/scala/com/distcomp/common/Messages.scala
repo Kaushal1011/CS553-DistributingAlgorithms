@@ -27,19 +27,34 @@ object SimulatorProtocol {
 
   case object AlgorithmDone extends SimulatorMessage
 
+  case class SpanningTreeCompletedSimCall(sender: ActorRef[Message], parent: ActorRef[Message], children: Set[ActorRef[Message]]) extends SimulatorMessage
+
+}
+
+object MutexProtocol{
+  case object StartCriticalSectionRequest extends Message
+  case object EnterCriticalSection extends Message
+  case object ExitCriticalSection extends Message
 }
 
 object RicartaAgarwalProtocol{
 
   case class RequestCS(timestamp: Long, from: ActorRef[Message]) extends Message
-
   case class ReplyCS(timestamp: Long, from:ActorRef[Message]) extends Message
-
   case class ReleaseCS(timestamp: Long, from:ActorRef[Message]) extends Message
 
-  case object EnterCriticalSection extends Message
+}
 
-  case object ExitCriticalSection extends Message
 
-  case object StartCriticalSectionRequest extends Message
+object RaymondsMutexProtocol{
+
+  case class RequestToken(from: ActorRef[Message]) extends Message
+  case class ReceiveToken( from: ActorRef[Message]) extends Message
+  case class AddToQueue(process: ActorRef[Message]) extends Message
+
+}
+
+object SpanningTreeProtocol{
+  case object InitiateSpanningTree extends Message
+  case class EchoMessage(sender: ActorRef[Message]) extends Message
 }
