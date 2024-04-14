@@ -10,21 +10,21 @@ import scala.util.matching.Regex
 object Intialiser {
 
   def apply(simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] =
-    behavior(Map.empty, simulator)
+    behavior(Map.empty, simulator, None)
 
-  private def behavior(nodeMap: Map[String, ActorRef[Message]], simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] =
+  private def behavior(nodeMap: Map[String, ActorRef[Message]], simulator: ActorRef[SimulatorProtocol.SimulatorMessage], failureDetector: Option[ActorRef[Message]]): Behavior[Message] =
     Behaviors.receive { (context, message) =>
       message match {
-        case SetupNetwork(dotFilePath, isDirected, createRing, createClique,createBinTree, simulator) =>
-          val updatedNodeMap = setupNetwork(context, dotFilePath, isDirected, createRing, createClique, createBinTree, simulator)
-          behavior(updatedNodeMap, simulator)
+        case SetupNetwork(dotFilePath, isDirected, createRing, createClique,createBinTree,enableFailureDetector ,simulator) =>
+          val updatedNodeMap = setupNetwork(context, dotFilePath, isDirected, createRing, createClique, createBinTree,enableFailureDetector, simulator, failureDetector)
+          behavior(updatedNodeMap, simulator, None)
         case KillAllNodes =>
-          killAllNodes(context, nodeMap, simulator)
-          behavior(Map.empty, simulator)
+          killAllNodes(context, nodeMap, simulator, failureDetector)
+          behavior(Map.empty, simulator, None)
       }
     }
 
-      def setupNetwork(context: ActorContext[Message], dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean, createBinTree: Boolean,simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Map[String, ActorRef[Message]] = {
+      def setupNetwork(context: ActorContext[Message], dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean, createBinTree: Boolean,enableFailureDetector: Boolean,simulator: ActorRef[SimulatorProtocol.SimulatorMessage], failureDetector: Option[ActorRef[Message]]): Map[String, ActorRef[Message]] = {
         // Read and parse the DOT file for node information
         val dotFileContent = Source.fromFile(dotFilePath).mkString
         val nodePattern: Regex = """"(\d+)"""".r
@@ -34,7 +34,7 @@ object Intialiser {
         nodePattern.findAllMatchIn(dotFileContent).foreach { m =>
           val nodeId = m.group(1)
           if (!nodeMap.contains(nodeId)) {
-            val nodeActor = context.spawn(NodeActor(simulator), s"node-$nodeId")
+            val nodeActor = context.spawn(NodeActor(simulator, failureDetector ), s"node-$nodeId")
             nodeMap(nodeId) = nodeActor
             simulator ! SimulatorProtocol.RegisterNode(nodeActor, nodeId)
           }
@@ -93,6 +93,17 @@ object Intialiser {
             context.log.info(s"Setting edges for ${node.path.name}: $es")
             node ! SetEdges(es)
           }
+
+          if (enableFailureDetector) {
+            val lastHeartBeats = edges.keys.map(_ -> System.currentTimeMillis()).toMap
+            val failureDetector = context.spawn(StrongFailureDetector(lastHeartBeats), "failure-detector")
+
+            edges.keys.foreach { node =>
+              node ! EnableFailureDetector(failureDetector)
+            }
+
+
+          }
         }else {
 
           // Add Binary Tree Structure to the network of nodes
@@ -113,6 +124,16 @@ object Intialiser {
             context.log.info(s"Setting edges for ${node.path.name}: $es")
             node ! SetBinaryTreeEdges(parentMap.getOrElse(node,null), binaryTreeEdges.toMap)
           }
+
+          if (enableFailureDetector) {
+            val lastHeartBeats = binaryTreeEdges.keys.map(_ -> System.currentTimeMillis()).toMap
+            val failureDetector = context.spawn(StrongFailureDetector(lastHeartBeats), "failure-detector")
+
+            binaryTreeEdges.keys.foreach { node =>
+              node ! EnableFailureDetector(failureDetector)
+            }
+
+          }
         }
 
         // Start the simulation after a delay to ensure all SetEdges messages have been processed
@@ -125,9 +146,11 @@ object Intialiser {
         nodeMap.toMap
       }
 
-      def killAllNodes(context: ActorContext[Message],nodeMap: Map[String, ActorRef[Message]], simulator: ActorRef[SimulatorProtocol.SimulatorMessage] ): Unit = {
+      def killAllNodes(context: ActorContext[Message],nodeMap: Map[String, ActorRef[Message]], simulator: ActorRef[SimulatorProtocol.SimulatorMessage], failureDetector: Option[ActorRef[Message]] ): Unit = {
         nodeMap.values.foreach(context.stop)
         context.log.info("All node actors have been stopped.")
+        // kill the failure detector
+        failureDetector.foreach(context.stop)
         simulator ! SimulatorProtocol.NodesKilled
       }
 

@@ -6,6 +6,7 @@
       "createRing": false,
       "createClique": false,
       "createBinTree": false,
+      "enableFailureDetector": false,
       "algorithm": "raymonds-algo",
       "additionalParameters": {
         "initiators": 5,
@@ -19,6 +20,7 @@
       "createRing": false,
       "createClique": false,
       "createBinTree": true,
+      "enableFailureDetector": true,
       "algorithm": "agrawal-elabbadi",
       "additionalParameters": {
         "initiators": 5,

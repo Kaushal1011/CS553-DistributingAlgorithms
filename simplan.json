@@ -6,19 +6,7 @@
       "createRing": false,
       "createClique": true,
       "createBinTree": false,
-      "algorithm": "ricart-agarwala",
-      "additionalParameters": {
-        "initiators": 5,
-        "additional": 7,
-        "kill": 1
-      }
-    },
-    {
-      "dotFilePath": "ExampleNetwork.dot",
-      "isDirected": false,
-      "createRing": false,
-      "createClique": true,
-      "createBinTree": false,
+      "enableFailureDetector": false,
       "algorithm": "ricart-agarwala",
       "additionalParameters": {
         "initiators": 5,
@@ -31,12 +19,42 @@
         "isDirected": false,
         "createRing": false,
         "createClique": true,
+        "createBinTree": false,
+        "enableFailureDetector": false,
         "algorithm": "ra-carvalho",
         "additionalParameters": {
             "initiators": 5,
             "additional": 10,
             "kill": 1
         }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "raymonds-algo",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": true,
+      "enableFailureDetector": false,
+      "algorithm": "agrawal-elabbadi",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
     }
   ]
 }

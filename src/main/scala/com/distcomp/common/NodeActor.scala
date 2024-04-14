@@ -10,20 +10,20 @@ import com.distcomp.mutex.NodeActorBinaryTree
 
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
-  def apply(simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] = Behaviors.setup { context =>
+  def apply(simulator: ActorRef[SimulatorProtocol.SimulatorMessage], failureDetector: Option[ActorRef[Message]]): Behavior[Message] = Behaviors.setup { context =>
     // Initially, register this node with the SimulatorActor
     simulator ! RegisterNode(context.self, context.self.path.name)
 
-    active(Map.empty, Set.empty, 0, simulator)
+    active(Map.empty, Set.empty, 0, simulator,failureDetector)
   }
 
   // Active behavior now includes the SimulatorActor for notification
-  private def active(edges: Map[ActorRef[Message], Int], hellosReceived: Set[ActorRef[Message]], timestamp: Int, simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] =
+  private def active(edges: Map[ActorRef[Message], Int], hellosReceived: Set[ActorRef[Message]], timestamp: Int, simulator: ActorRef[SimulatorProtocol.SimulatorMessage], failureDetector: Option[ActorRef[Message]]): Behavior[Message] =
     Behaviors.receive { (context, message) =>
       message match {
         case SetEdges(newEdges) =>
           val cleanedEdges = newEdges - context.self
-          active(cleanedEdges, hellosReceived, timestamp, simulator)
+          active(cleanedEdges, hellosReceived, timestamp, simulator, failureDetector)
 
         case SendMessage(content, msgTimestamp, from) =>
           val newTimestamp = math.max(timestamp, msgTimestamp) + 1
@@ -36,22 +36,25 @@ object NodeActor {
             simulator ! NodeReady(context.self.path.name)
             algorithm(edges, newTimestamp, simulator)
           } else {
-            active(edges, updatedHellosReceived, newTimestamp, simulator)
+            active(edges, updatedHellosReceived, newTimestamp, simulator, failureDetector)
           }
 
         case SetBinaryTreeEdges(parent, tree) =>
-          NodeActorBinaryTree(context.self.path.name, parent, tree, simulator, timestamp)
+          NodeActorBinaryTree(context.self.path.name, parent, tree, simulator,failureDetector,timestamp )
 
         case StartSimulation =>
           val newTimestamp = timestamp + 1
           edges.keys.foreach { neighbor =>
             neighbor ! SendMessage("hello", newTimestamp, context.self)
           }
-          active(edges, hellosReceived, newTimestamp, simulator)
+          active(edges, hellosReceived, newTimestamp, simulator, failureDetector)
+
+        case EnableFailureDetector(newFailureDetector) =>
+          active(edges, hellosReceived, timestamp, simulator, Some(newFailureDetector))
 
         case UpdateClock(receivedTimestamp) =>
           val newTimestamp = math.max(timestamp, receivedTimestamp) + 1
-          active(edges, hellosReceived, newTimestamp, simulator)
+          active(edges, hellosReceived, newTimestamp, simulator, failureDetector)
 
         case _ => Behaviors.unhandled
       }
@@ -75,7 +78,6 @@ object NodeActor {
             case "raymonds-algo" =>
              context.log.info("Switching to Spanning Tree Behavior, needs tree building")
              SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
-
             case _ =>
               context.log.info("Algorithm not recognized")
               Behaviors.unhandled

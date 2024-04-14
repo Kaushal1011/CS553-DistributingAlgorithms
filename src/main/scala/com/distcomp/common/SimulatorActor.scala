@@ -19,6 +19,7 @@ object SimulatorActor {
                              createRing: Boolean,
                              createClique: Boolean,
                              createBinTree: Boolean,
+                             enableFailureDetector: Boolean,
                              algorithm: String,
                              additionalParameters: Map[String, Int] // Assuming all parameters are integers for simplicity
                            )
@@ -88,6 +89,18 @@ object SimulatorActor {
         context.log.info("Waiting for spanning tree to complete.")
         nodes.take(1).foreach(node => node ! InitiateSpanningTree)
 
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "agrawal-elabbadi" =>
+        context.log.info("Executing Agrawal-ElAbbadi algorithm.")
+//        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+//
+//        Thread.sleep(2000)
+//
+//        if (additional > 0) {
+//          context.log.info("Adding additional initiators.")
+//          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+//        }
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
 
       case _ =>
@@ -217,7 +230,7 @@ object SimulatorActor {
           else{
             val step = remainingSteps.head
             context.log.info(s"Initialising network for step: $step")
-            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique,step.createBinTree, context.self)
+            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique,step.createBinTree, step.enableFailureDetector ,context.self)
             behaviorAfterInit(Set.empty, Set.empty, remainingSteps, intialiser, 1)
           }
 
@@ -237,7 +250,7 @@ object SimulatorActor {
           val simulationSteps = (json \ "steps").as[List[SimulationStep]] // Define SimulationStep case class as per JSON structure
 
           simulationSteps.headOption.foreach { step =>
-            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, step.createBinTree, context.self)
+            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, step.createBinTree, step.enableFailureDetector, context.self)
           }
           behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
 

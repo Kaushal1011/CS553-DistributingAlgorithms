@@ -13,9 +13,16 @@ case class UpdateClock(receivedTimestamp: Int) extends Message
 case object SwitchToDefaultBehavior extends Message
 case class SwitchToAlgorithm(algorithm: String, additionalParams: Map[String, Int]) extends Message
 
-case class SetupNetwork(dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean, createBinTree: Boolean,simulator: ActorRef[SimulatorProtocol.SimulatorMessage]) extends Message
+case class SetupNetwork(dotFilePath: String, isDirected: Boolean, createRing: Boolean, createClique: Boolean, createBinTree: Boolean, enableFailureDetector: Boolean,simulator: ActorRef[SimulatorProtocol.SimulatorMessage]) extends Message
 
 case object KillAllNodes extends Message
+
+
+case class EnableFailureDetector(failureDetector: ActorRef[Message]) extends Message
+case object StartHeartbeat extends Message
+case class Heartbeat(node: ActorRef[Message], timestamp: Long) extends Message
+case class NodeFailureDetected(failedNode: ActorRef[Message]) extends Message
+case object CheckHeartbeats extends Message
 
 // Messages specific to interaction with the SimulatorActor
 object SimulatorProtocol {

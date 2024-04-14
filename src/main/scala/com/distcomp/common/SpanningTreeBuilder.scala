@@ -30,7 +30,7 @@ object SpanningTreeBuilder {
           context.log.info(s"Node $nodeId received Echo message from ${from.path.name}")
           val newReceivedFrom = receivedFrom + (from -> true)
           context.log.info(s"Node $nodeId has received Echo from ${newReceivedFrom} neighbors")
-          // does this node have a parent different from itself ?
+          // does this node have a parent different from itself ? // basically getting the message for the first time
           if (parent.path.name == context.self.path.name && !root){
             val newParent = from
             val newChildren = neighbors - from
