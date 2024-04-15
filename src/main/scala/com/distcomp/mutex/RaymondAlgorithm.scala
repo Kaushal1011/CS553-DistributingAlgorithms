@@ -50,6 +50,16 @@ object RaymondAlgorithm {
           head ! ReceiveToken(context.self)
           // tell simulator that the node has left the critical section
           simulator ! AlgorithmDone
+
+          // tail is non empty
+          if (queue.tail.nonEmpty) {
+            // queue changed, and theirs a new member at the head of the queue request token from new parent
+            head ! RequestToken(context.self)
+            apply(head, children, hasToken = false, queue.tail, simulator, timestamp)
+          } else {
+            apply(head, children, hasToken = false, queue.tail, simulator, timestamp)
+          }
+
           apply(head, children, hasToken = false, queue.tail, simulator, timestamp)
         } else {
           simulator ! AlgorithmDone
@@ -79,10 +89,18 @@ object RaymondAlgorithm {
           if (head == context.self) {
             context.log.info(s"Node ${context.self.path.name} has received the token and is entering the critical section by algorithm")
             context.self ! EnterCriticalSection
-            apply(head, children, hasToken = true, queue.tail, simulator, timestamp)
+            // new head logic is handeled when exits and next token is make parent
+            apply(newParent, children, hasToken = true, queue.tail, simulator, timestamp)
           }else {
             head ! ReceiveToken(context.self)
-            apply(head, children, hasToken = false, queue.tail, simulator, timestamp)
+            // tail is non empty
+            if (queue.tail.nonEmpty) {
+              // queue changed, and theirs a new member at the head of the queue request token from new parent
+              head ! RequestToken(context.self)
+              apply(head, children, hasToken = false, queue.tail, simulator, timestamp)
+            } else {
+              apply(head, children, hasToken = false, queue.tail, simulator, timestamp)
+            }
           }
 
         } else {

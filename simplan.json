@@ -48,7 +48,7 @@
       "createRing": false,
       "createClique": false,
       "createBinTree": true,
-      "enableFailureDetector": false,
+      "enableFailureDetector": true,
       "algorithm": "agrawal-elabbadi",
       "additionalParameters": {
         "initiators": 5,
