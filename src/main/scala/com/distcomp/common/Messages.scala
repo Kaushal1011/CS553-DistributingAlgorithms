@@ -20,8 +20,10 @@ case object KillAllNodes extends Message
 
 case class EnableFailureDetector(failureDetector: ActorRef[Message]) extends Message
 case object StartHeartbeat extends Message
+case object StopHeartbeat extends Message
 case class Heartbeat(node: ActorRef[Message], timestamp: Long) extends Message
 case class NodeFailureDetected(failedNode: ActorRef[Message]) extends Message
+case class NodeBackOnline(nodeId: ActorRef[Message]) extends Message
 case object CheckHeartbeats extends Message
 
 // Messages specific to interaction with the SimulatorActor

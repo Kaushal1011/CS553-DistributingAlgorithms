@@ -5,20 +5,6 @@
       "isDirected": false,
       "createRing": false,
       "createClique": false,
-      "createBinTree": false,
-      "enableFailureDetector": false,
-      "algorithm": "raymonds-algo",
-      "additionalParameters": {
-        "initiators": 5,
-        "additional": 0,
-        "kill": 1
-      }
-    },
-    {
-      "dotFilePath": "ExampleNetwork.dot",
-      "isDirected": false,
-      "createRing": false,
-      "createClique": false,
       "createBinTree": true,
       "enableFailureDetector": true,
       "algorithm": "agrawal-elabbadi",
