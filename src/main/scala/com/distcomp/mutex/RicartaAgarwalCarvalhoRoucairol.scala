@@ -100,6 +100,8 @@ object RicartaAgarwalCarvalhoRoucairol {
           val newTimestamp = math.max(ourTimestamp, receivedTimestamp) + 1
           context.log.info(s"Node $nodeId updated timestamp to $newTimestamp")
           active(nodeId, nodes, edges, simulator, pendingReplies, requestingCS,inCriticalSection, newTimestamp, lastGranted)
+
+        case _ => Behaviors.same
       }
     }
 }

@@ -21,6 +21,7 @@ object Intialiser {
         case KillAllNodes =>
           killAllNodes(context, nodeMap, simulator, failureDetector)
           behavior(Map.empty, simulator, None)
+        case _ => Behaviors.unhandled
       }
     }
 

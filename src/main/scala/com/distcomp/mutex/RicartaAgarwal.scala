@@ -107,6 +107,8 @@ object RicartaAgarwal {
           context.log.info(s"Node $nodeId updated timestamp to $newTimestamp")
           active(nodeId, nodes, edges, simulator, pendingReplies, requestingCS,inCriticalSection, newTimestamp)
 
+        case _ => Behaviors.same
+
       }
     }
 }
