@@ -68,3 +68,12 @@ object SpanningTreeProtocol{
   case object InitiateSpanningTree extends Message
   case class EchoMessage(sender: ActorRef[Message]) extends Message
 }
+
+
+object AgrawalElAbbadiProtocol{
+  case class QueueInQuorum(nodeId: ActorRef[Message]) extends Message
+  case class PermissionRequest(nodeId: ActorRef[Message]) extends Message
+  case class RequestGranted(nodeId: ActorRef[Message]) extends Message
+  case class RequestDenied(nodeId: ActorRef[Message]) extends Message
+  case class ReleaseCriticalSection(nodeId: ActorRef[Message]) extends Message
+}
