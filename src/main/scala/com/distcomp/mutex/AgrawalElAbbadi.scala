@@ -103,13 +103,13 @@ object AgrawalElAbbadi {
               case child :: null =>  // Only one child
                 val newQuorumQueue = quorumQueue.tail :+ child
                 newQuorumQueue.head ! PermissionRequest(context.self)
-                active(context.self.path.name, parent, tree, simulator, failureDetector, timestamp, failedNodes, heartbeatRunner, Some(nodeId), newQuorumQueue)
+                active(context.self.path.name, parent, tree, simulator, failureDetector, timestamp, failedNodes, heartbeatRunner, permissionGivenTo, newQuorumQueue)
 
               case firstChild :: secondChild :: Nil =>  // Two children, use minBy to choose
                 val child = List(firstChild, secondChild).minBy(node => extractId(node.path.name))
                 val newQuorumQueue = quorumQueue.tail :+ child
                 newQuorumQueue.head ! PermissionRequest(context.self)
-                active(context.self.path.name, parent, tree, simulator, failureDetector, timestamp, failedNodes, heartbeatRunner, Some(nodeId), newQuorumQueue)
+                active(context.self.path.name, parent, tree, simulator, failureDetector, timestamp, failedNodes, heartbeatRunner, permissionGivenTo, newQuorumQueue)
 
               case null :: null :: Nil=>  // No children, empty or "null" children
                 context.self ! EnterCriticalSection
@@ -162,6 +162,10 @@ object AgrawalElAbbadi {
         case NodeFailureDetected(node) =>
           context.log.info(s"Node failure detected: ${node.path.name}")
 //          if permission is given to failed node, revoke permission
+          if (permissionGivenTo.contains(node)) {
+            context.log.info(s"Revoking permission from failed node: ${node.path.name}")
+            active(nodeId, parent, tree, simulator, failureDetector, timestamp, failedNodes+node, heartbeatRunner, None,quorumQueue)
+          }
           active(nodeId, parent, tree, simulator, failureDetector, timestamp, failedNodes + node, heartbeatRunner, permissionGivenTo,quorumQueue)
 
         case NodeBackOnline(node) =>
