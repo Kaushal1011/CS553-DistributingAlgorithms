@@ -102,9 +102,11 @@ object SimulatorActor {
           nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
         }
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
-
+      case "chang-roberts" =>
+        context.log.info("Executing Chang-Roberts Algorithm")
+        behaviorAfterInit(nodes, readyNodes, simulationSteps,intialiser, 1)
       case _ =>
-        context.log.info("Algorithm not recognized.")
+        context.log.info("Algorithm not recognized in Simulator .")
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
     }
   }

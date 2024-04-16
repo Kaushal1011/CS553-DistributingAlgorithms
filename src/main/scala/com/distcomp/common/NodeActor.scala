@@ -3,7 +3,7 @@ package com.distcomp.common
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
-
+import com.distcomp.election.ChangRoberts
 import com.distcomp.mutex.RicartaAgarwal
 import com.distcomp.mutex.RicartaAgarwalCarvalhoRoucairol
 import com.distcomp.mutex.NodeActorBinaryTree
@@ -78,8 +78,17 @@ object NodeActor {
             case "raymonds-algo" =>
              context.log.info("Switching to Spanning Tree Behavior, needs tree building")
              SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+            case "chang-roberts" =>
+              val nextNodesMap = edges.map { case (currentNode, _) =>
+                val nextNode = edges.getOrElse(currentNode, {
+                  throw new IllegalStateException(s"No next node found for node ${currentNode.path.name}")
+                })
+                (currentNode, nextNode)
+              }
+              context.log.info("Switching the algorithm to Chang-Roberts in nodeActor")
+              ChangRoberts(context.self.path.name,  edges.keySet, nextNodesMap)
             case _ =>
-              context.log.info("Algorithm not recognized")
+              context.log.info("Algorithm not recognized in nodeActor")
               Behaviors.unhandled
           }
         case _ =>
