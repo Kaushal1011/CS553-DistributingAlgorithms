@@ -5,6 +5,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import com.distcomp.common.Message
 import com.distcomp.common.FranklinProtocol._
 
+
 object Franklin {
   def apply(nodeId: String, leftNeighbor: ActorRef[Message], rightNeighbor: ActorRef[Message]): Behavior[Message] = {
     println(s"Node $nodeId starting Franklin algorithm")

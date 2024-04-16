@@ -4,6 +4,8 @@ import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
 import com.distcomp.common.Message
 import com.distcomp.common.DolevKlaweRodehProtocol._
+import com.distcomp.common.ElectionProtocol._
+
 
 object DolevKlaweRodeh {
 
@@ -15,7 +17,7 @@ object DolevKlaweRodeh {
   private def active(nodeId: String, nextNode: ActorRef[Message], prevID: String, receivedQ: String): Behavior[Message] =
     Behaviors.receive { (context, message) =>
       message match {
-        case ElectionMessage(id, round, from) =>
+        case ElectionMessageDKRP(id, round, from) =>
           // Initial message from this node
           nextNode ! ForwardMessage(nodeId, context.self, 0)
           Behaviors.same
@@ -30,7 +32,7 @@ object DolevKlaweRodeh {
           val maxId = List(id, prevID).max
           if (maxId < nodeId) {
             // If the maximum ID is less than this node's ID, initiate a new round
-            nextNode ! ElectionMessage(nodeId, 1, context.self)
+            nextNode ! ElectionMessageDKRP(nodeId, 1, context.self)
             active(nodeId, nextNode, "", "")
           } else if (maxId > nodeId) {
             // If the maximum ID is greater, become passive

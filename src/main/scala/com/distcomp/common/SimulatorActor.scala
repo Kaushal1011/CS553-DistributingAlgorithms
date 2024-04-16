@@ -5,6 +5,7 @@ import akka.actor.typed.scaladsl.{Behaviors, ActorContext}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
+import com.distcomp.common.ElectionProtocol._
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
 import scala.util.Random
@@ -104,6 +105,18 @@ object SimulatorActor {
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
       case "chang-roberts" =>
         context.log.info("Executing Chang-Roberts Algorithm")
+
+        Thread.sleep(2000)
+        context.log.info(s"$nodes")
+
+        // randomly take x initiators and send initate message to start election
+        nodes.take(numInitiators).foreach(node => node ! StartElection)
+
+        // nodes go into election mode once election leader is appointed it sends termination message to simulator
+
+        // termination detection here is not weight throwing it just expects one reply from leader
+
+
         behaviorAfterInit(nodes, readyNodes, simulationSteps,intialiser, 1)
       case _ =>
         context.log.info("Algorithm not recognized in Simulator .")
@@ -194,6 +207,7 @@ object SimulatorActor {
             if (step.additionalParameters.getOrElse("kill", 0) == 1) {
               context.log.info("Killing all nodes.")
               intialiser ! KillAllNodes
+              Thread.sleep(3000)
             }
 
             Thread.sleep(1000)

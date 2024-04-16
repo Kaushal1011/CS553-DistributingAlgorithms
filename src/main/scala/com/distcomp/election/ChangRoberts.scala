@@ -2,76 +2,80 @@ package com.distcomp.election
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
 import com.distcomp.common.ChangRobertsProtocol._
+import com.distcomp.common.ElectionProtocol._
+import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.{Message}
-
+import com.distcomp.common.utils.extractId
 object ChangRoberts {
-  def apply(nodeId: String, nodes: Set[ActorRef[Message]], edges: Map[ActorRef[Message], Int]): Behavior[Message] = {
+  def apply(nodeId: String, nodes: Set[ActorRef[Message]], edges: Map[ActorRef[Message], Int],
+           simulator: ActorRef[SimulatorMessage]): Behavior[Message] = { Behaviors.setup {
+    (context) =>
+      context.log.info("Here to in setup chang roberts")
+      val nextNodeRef = edges.keys.head
 
-    val currentNode = nodes.find(_.path.name == nodeId).getOrElse {
-      throw new IllegalArgumentException(s"Node $nodeId not found in the nodes set")
-    }
+      active(nodeId, nextNodeRef, simulator)
+  }
 
-    // Assuming edges map each ActorRef[Message] to another ActorRef[Message] that represents the next node
-    val nextNodeRef = edges.getOrElse(currentNode, throw new IllegalStateException(s"No next node found for node $nodeId"))
-
-//    println(s"Node $nodeId starting Chang-Roberts algorithm, next node: ${nextNodeRef.path.name}")
-    active(nodeId, currentNode)
-    }
+  }
 
   private def active(nodeId: String,
-                     nextNode: ActorRef[Message]): Behavior[Message] =
+                     nextNode: ActorRef[Message],
+                     simulator: ActorRef[SimulatorMessage]): Behavior[Message] =
     Behaviors.receive { (context, message) =>
       message match {
-        case ElectionMessage(candidateId, from) =>
-          if (candidateId < nodeId) {
+        case StartElection =>
+          context.log.info(s"$nodeId started election")
+          nextNode ! ElectionMessageCRP(nodeId, context.self)
+          active(nodeId, nextNode,simulator)
+        case ElectionMessageCRP(candidateId, from) =>
+          context.log.info(s"$nodeId received Election messager from $candidateId")
+          if (extractId(candidateId) < extractId(nodeId)) {
             // If q<p, dismiss the message
+            // take part in election
+            nextNode ! ElectionMessageCRP(nodeId, context.self)
             Behaviors.same
-          } else if (candidateId > nodeId) {
+          } else if (extractId(candidateId) > extractId(nodeId)) {
             // If q>p, become passive and forward the message
             //            from ! VictoryMessage(nodeId) // Notify sender that this node is the leader
-            nextNode ! ElectionMessage(candidateId, context.self)
+            nextNode ! ElectionMessageCRP(candidateId, context.self)
             passive(nodeId, nextNode)
-            Behaviors.same
           } else {
             // If q=p, this node is the leader
             nextNode ! VictoryMessage(nodeId) // Announce leadership to the next node
-            leaderBehavior(nodeId)
+            Thread.sleep(500)
+            context.log.info(s"Node $nodeId: I am the leader.")
+            simulator ! AlgorithmDone
+            Behaviors.same
           }
         case VictoryMessage(leaderId) =>
+          context.log.info(s"$nodeId received victory message")
           // Forward the victory message
           nextNode ! VictoryMessage(leaderId)
           if (leaderId == nodeId) {
+            Thread.sleep(500)
             context.log.info(s"Node $nodeId: I am the leader.")
-            Behaviors.stopped
+            // wait for other nodes to acknowledge leader
+
+            Behaviors.same
           } else {
             context.log.info(s"Node $nodeId: The leader is $leaderId.")
-            Behaviors.stopped
+            Behaviors.same
           }
       }
     }
-
-  private def leaderBehavior(leaderId: String): Behavior[Message] = Behaviors.receiveMessage { message =>
-    // Leader behavior doesn't handle any messages, as it's already the leader
-    Behaviors.unhandled //unhandled
-  }
 
   private def passive(nodeId: String, nextNode: ActorRef[Message]): Behavior[Message] =
     Behaviors.receiveMessage {
       case VictoryMessage(leaderId) =>
         println(s"Node $nodeId recognizes Node $leaderId as the leader.")
         nextNode ! VictoryMessage(leaderId)
-        Behaviors.stopped
+        Behaviors.same
       case _ =>
         // Ignore any other messages in passive state
         Behaviors.same
     }
 }
 
-//  private def passive(id: String, next: ActorRef[Message]): Behavior[Message] = Behaviors.receiveMessage {
-//    // Forward the victory message and become stopped
-//    case msg: VictoryMessage =>
-//      next ! msg
-//      Behaviors.unhandled
-//  }
+
 
 

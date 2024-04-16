@@ -76,17 +76,11 @@ object NodeActor {
               context.log.info("Switching to Ricart-Agarwala Carvalho-Roucairol algorithm")
               RicartaAgarwalCarvalhoRoucairol(context.self.path.name, edges.keySet, edges, simulator, timestamp)
             case "raymonds-algo" =>
-             context.log.info("Switching to Spanning Tree Behavior, needs tree building")
-             SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+              context.log.info("Switching to Spanning Tree Behavior, needs tree building")
+              SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
             case "chang-roberts" =>
-              val nextNodesMap = edges.map { case (currentNode, _) =>
-                val nextNode = edges.getOrElse(currentNode, {
-                  throw new IllegalStateException(s"No next node found for node ${currentNode.path.name}")
-                })
-                (currentNode, nextNode)
-              }
-              context.log.info("Switching the algorithm to Chang-Roberts in nodeActor")
-              ChangRoberts(context.self.path.name,  edges.keySet, nextNodesMap)
+              context.log.info("Switching to ChangRoberts Election Algorithm")
+              ChangRoberts(context.self.path.name,  edges.keySet, edges, simulator)
             case _ =>
               context.log.info("Algorithm not recognized in nodeActor")
               Behaviors.unhandled

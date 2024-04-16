@@ -78,20 +78,24 @@ object AgrawalElAbbadiProtocol{
   case class ReleaseCriticalSection(nodeId: ActorRef[Message]) extends Message
 }
 
-object ChangRobertsProtocol{
-  case class ElectionMessage(candidateId: String, from: ActorRef[Message]) extends Message
+object ElectionProtocol{
+  case object StartElection extends Message
   case class VictoryMessage(leaderId: String) extends Message
+}
+
+object ChangRobertsProtocol{
+  case class ElectionMessageCRP(candidateId: String, from: ActorRef[Message]) extends Message
+
 }
 
 object FranklinProtocol{
-  case class ElectionMessage(id: String, round: Int, from: ActorRef[Message]) extends Message
-  case class VictoryMessage(leaderId: String) extends Message
+  case class ElectionMessageFP(id: String, round: Int, from: ActorRef[Message]) extends Message
+
 }
 
 object DolevKlaweRodehProtocol{
-  case class ElectionMessage(id: String, round: Int, from: ActorRef[Message]) extends Message
+  case class ElectionMessageDKRP(id: String, round: Int, from: ActorRef[Message]) extends Message
   case class ForwardMessage(id: String, from: ActorRef[Message], marker: Int) extends Message
-  case class VictoryMessage(leaderId: String) extends Message
 
 }
 
