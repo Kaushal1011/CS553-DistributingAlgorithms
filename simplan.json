@@ -4,10 +4,10 @@
       "dotFilePath": "ExampleNetwork.dot",
       "isDirected": false,
       "createRing": false,
-      "createClique": true,
-      "algorithm": "ricart-agarwala",
+      "createClique": false,
+      "algorithm": "chandy-misra",
       "additionalParameters": {
-        "initiators": 5
+        "initiators": 1
       }
     }
   ]

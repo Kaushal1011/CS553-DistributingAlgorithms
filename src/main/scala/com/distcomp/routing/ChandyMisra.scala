@@ -19,7 +19,7 @@ object ChandyMisra {
     Behaviors.receive { (context, message) =>
       message match {
         case ExecuteSimulation() =>
-          if (nodeId == "1") { // Source node initialization
+          if (nodeId == "1") { // Source node sends initial distance estimates
             edges.foreach { case (neighbor, weight) =>
               neighbor ! ShortestPathEstimate(dist + weight, context.self)
             }
@@ -27,14 +27,12 @@ object ChandyMisra {
           Behaviors.same
 
         case ShortestPathEstimate(receivedDist, from) =>
-          val newDist = receivedDist + edges.getOrElse(from, Int.MaxValue)
-          val node = from.path.name
-          if (newDist < dist) {
-            context.log.info(s"Node $nodeId updates its distance to $newDist via $node")
-            edges.keys.filterNot(_ == parent.getOrElse(context.self)).foreach { neighbor =>
-              neighbor ! ShortestPathEstimate(newDist, context.self)
+          if (receivedDist < dist) {
+            context.log.info(s"Node $nodeId updates its distance to $receivedDist from ${from.path.name}")
+            edges.keys.foreach { neighbor =>
+              neighbor ! ShortestPathEstimate(receivedDist + edges(neighbor), context.self)
             }
-            active(nodeId, edges, newDist, Some(from))
+            active(nodeId, edges, receivedDist, Some(from))
           } else {
             Behaviors.same // Ignore if the received distance does not improve the current estimate
           }

@@ -1,50 +1,53 @@
-package com.distcomp.routing
-
-import com.distcomp.common.MerlinSegallProtocol._
-import com.distcomp.common.{Message, SimulatorProtocol}
-
-object MerlinSegall {
-  def apply(nodeId: String, edges: Map[ActorRef[Message], Int]): Behavior[Message] =
-    Behaviors.setup { context =>
-      val coordinator = context.spawn(Coordinator(context), "coordinator")
-
-      Behaviors.receiveMessage {
-        case ExecuteSimulation() =>
-          if (nodeId == "1") coordinator ! InitiateRound(1)
-          Behaviors.same
-
-        case InitiateRound(round) =>
-          context.log.info(s"$nodeId starting round $round")
-          if (nodeId == "1") {
-            edges.foreach { case (neighbor, weight) => neighbor ! ShortestPathEstimate(weight, context.self, round) }
-          }
-          Behaviors.same
-
-        case ShortestPathEstimate(distance, from, round) =>
-          context.log.info(s"$nodeId received estimate from ${from.path.name} with distance $distance in round $round")
-          // Implement distance update and propagation logic here
-          coordinator ! RoundComplete(nodeId, round)
-          Behaviors.same
-
-        case _ => Behaviors.unhandled
-      }
-    }
-
-  // Coordinator logic integrated within the NodeActor
-  private def Coordinator(context: ActorContext[Message]): Behavior[Message] =
-    Behaviors.receiveMessage {
-      case InitiateRound(round) =>
-        context.log.info(s"Coordinator initiating round $round")
-        // Logic to initiate a new round for all nodes
-        // This example assumes a mechanism to reference and message all nodes
-        Behaviors.same
-
-      case RoundComplete(nodeId, round) =>
-        context.log.info(s"Node $nodeId completed round $round")
-        // Track completion and potentially initiate the next round
-        // Implementation depends on how nodes are managed and referenced
-        Behaviors.same
-
-      case _ => Behaviors.unhandled
-    }
-}
+//package com.distcomp.routing
+//
+//import akka.actor.typed.{ActorRef, Behavior}
+//import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+//import com.distcomp.common.MerlinSegallProtocol._
+//import com.distcomp.common.{Message, SimulatorProtocol}
+//
+//object MerlinSegall {
+//  def apply(nodeId: String, edges: Map[ActorRef[Message], Int], isInitiator: Boolean): Behavior[Message] =
+//    Behaviors.setup { context =>
+//      var shortestDistance = if (isInitiator) 0 else Int.MaxValue
+//      var round = 1 // Assuming that the initiator starts with round 1
+//
+//      Behaviors.receiveMessage {
+//        case ExecuteSimulation() =>
+//          context.log.info(s"Node $nodeId: ExecuteSimulation received.")
+//          if (isInitiator) {
+//            context.log.info(s"Node $nodeId: Initiating simulation as the initiator.")
+//            // Initiator sends its estimate to all neighbors
+//            edges.foreach { case (neighbor, weight) =>
+//              neighbor ! ShortestPathEstimate(shortestDistance + weight, context.self, round)
+//              context.log.info(s"Node $nodeId: Sending initial shortest path estimate to neighbor.")
+//            }
+//          }
+//          Behaviors.same
+//
+//        case ShortestPathEstimate(distance, from, receivedRound) if receivedRound >= round =>
+//          context.log.info(s"Node $nodeId: Received shortest path estimate from ${from.path.name} with distance $distance in round $receivedRound.")
+//          // Update distance if a shorter path is found
+//          if (distance < shortestDistance) {
+//            context.log.info(s"Node $nodeId: Updating shortest distance from $shortestDistance to $distance.")
+//            shortestDistance = distance
+//            // Propagate new shortest distance to neighbors except the sender
+//            edges.filterKeys(_ != from).foreach { case (neighbor, weight) =>
+//              neighbor ! ShortestPathEstimate(shortestDistance + weight, context.self, round)
+//              context.log.info(s"Node $nodeId: Propagating updated shortest path estimate to neighbors.")
+//            }
+//          }
+//          Behaviors.same
+//
+//        case _ => Behaviors.unhandled
+//      }
+//    }
+//}
+//
+//// Define the messages used for communication
+//object MerlinSegallProtocol {
+//  sealed trait Message
+//  case class ExecuteSimulation() extends Message
+//  case class InitiateRound(round: Int) extends Message
+//  case class ShortestPathEstimate(distance: Int, from: ActorRef[Message], round: Int) extends Message
+//  case class RoundComplete(nodeId: String, round: Int) extends Message
+//}

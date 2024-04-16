@@ -36,23 +36,23 @@ object ChandyMisraProtocol{
   case class ShortestPathEstimate(distance: Int, from: ActorRef[Message]) extends Message
 }
 
-object MerlinSegallProtocol{
-  case class ExecuteSimulation() extends Message
-  case class ShortestPathEstimate(distance: Int, from: ActorRef[Message]) extends Message
-  case class InitiateRound(round: Int) extends Message
-  case class RoundComplete(nodeId: String, round: Int) extends Message
-}
-
-object TouegProtocol {
-  case class StartRouting() extends Message
-  case class DistanceVector(nodeId: String, distances: Map[String, Int]) extends Message
-}
-
-object FredericksonProtocol {
-  case object Start extends Message
-  case class EdgeUpdate(from: ActorRef[Message], to: ActorRef[Message], newWeight: Int) extends Message
-  case class RecalculatePaths() extends Message
-}
+//object MerlinSegallProtocol{
+//  case class ExecuteSimulation() extends Message
+//  case class ShortestPathEstimate(distance: Int, from: ActorRef[Message]) extends Message
+//  case class InitiateRound(round: Int) extends Message
+//  case class RoundComplete(nodeId: String, round: Int) extends Message
+//}
+//
+//object TouegProtocol {
+//  case class StartRouting() extends Message
+//  case class DistanceVector(nodeId: String, distances: Map[String, Int]) extends Message
+//}
+//
+//object FredericksonProtocol {
+//  case object Start extends Message
+//  case class EdgeUpdate(from: ActorRef[Message], to: ActorRef[Message], newWeight: Int) extends Message
+//  case class RecalculatePaths() extends Message
+//}
 
 object RicartaAgarwalProtocol{
 
