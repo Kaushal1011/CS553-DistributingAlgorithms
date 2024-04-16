@@ -48,7 +48,7 @@ object AgrawalElAbbadi {
       message match {
 
         case StartCriticalSectionRequest=>
-          context.log.info(s"Node $nodeId requesting critical section")
+          context.log.info(s"Node $nodeId requesting critical section from start")
 //            Queue root node in the quorum if root
 //          determine root from tree structure and queue it in the quorum
 //          lowest key in tree is root
@@ -118,7 +118,7 @@ object AgrawalElAbbadi {
               case null =>  // Should not occur, but safe
                 context.self ! EnterCriticalSection
                 active(context.self.path.name, parent, tree, simulator, failureDetector, timestamp, failedNodes, heartbeatRunner, permissionGivenTo, List.empty)
-              case _ =>  // More than two children
+              case _ =>  // No Children
                 context.self ! EnterCriticalSection
                 active(context.self.path.name, parent, tree, simulator, failureDetector, timestamp, failedNodes, heartbeatRunner, permissionGivenTo, List.empty)
             }
