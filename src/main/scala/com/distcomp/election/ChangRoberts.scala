@@ -14,8 +14,8 @@ object ChangRoberts {
     // Assuming edges map each ActorRef[Message] to another ActorRef[Message] that represents the next node
     val nextNodeRef = edges.getOrElse(currentNode, throw new IllegalStateException(s"No next node found for node $nodeId"))
 
-    println(s"Node $nodeId starting Chang-Roberts algorithm, next node: ${nextNodeRef.path.name}")
-    active(nodeId, nextNodeRef)
+//    println(s"Node $nodeId starting Chang-Roberts algorithm, next node: ${nextNodeRef.path.name}")
+    active(nodeId, currentNode)
     }
 
   private def active(nodeId: String,
