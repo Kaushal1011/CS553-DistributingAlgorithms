@@ -93,14 +93,14 @@ object SimulatorActor {
 
       case "agrawal-elabbadi" =>
         context.log.info("Executing Agrawal-ElAbbadi algorithm.")
-//        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
-//
-//        Thread.sleep(2000)
-//
-//        if (additional > 0) {
-//          context.log.info("Adding additional initiators.")
-//          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
-//        }
+        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
 
       case _ =>
