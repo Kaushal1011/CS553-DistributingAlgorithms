@@ -1,6 +1,8 @@
 Steps to Run Current stage of Repository:
 
-Install scala, sbt, and java>18
+Install scala, sbt, and java-17
+(for telemetry need lightbend credentials in lightbend.sbt)
+
 
 1. Git Clone
 2. Cd to Git Repo
