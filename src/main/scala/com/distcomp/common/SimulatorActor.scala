@@ -232,6 +232,7 @@ object SimulatorActor {
           else{
             val step = remainingSteps.head
             context.log.info(s"Initialising network for step: $step")
+            Thread.sleep(5000)
             intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique,step.createBinTree, step.enableFailureDetector ,context.self)
             behaviorAfterInit(Set.empty, Set.empty, remainingSteps, intialiser, 1)
           }
