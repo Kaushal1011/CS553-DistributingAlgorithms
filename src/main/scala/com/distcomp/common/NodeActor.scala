@@ -6,6 +6,7 @@ import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 import com.distcomp.election.ChangRoberts
 import com.distcomp.mutex.RicartaAgarwal
 import com.distcomp.mutex.RicartaAgarwalCarvalhoRoucairol
+import com.distcomp.mutex.PetersonTwoProcess
 import com.distcomp.mutex.NodeActorBinaryTree
 
 object NodeActor {
@@ -78,6 +79,10 @@ object NodeActor {
             case "raymonds-algo" =>
              context.log.info("Switching to Spanning Tree Behavior, needs tree building")
              SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+            case "peterson-two-process" =>
+              context.log.info("Switching to Peterson's Two Process Algorithm")
+              val node2 = edges.keys.head
+              PetersonTwoProcess(node2, None, simulator)
             case "chang-roberts" =>
               val nextNodesMap = edges.map { case (currentNode, _) =>
                 val nextNode = edges.getOrElse(currentNode, {

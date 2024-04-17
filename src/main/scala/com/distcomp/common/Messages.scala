@@ -47,6 +47,15 @@ object MutexProtocol{
   case object ExitCriticalSection extends Message
 }
 
+object PetersonTwoProcess{
+  case class SetFlag(node: ActorRef[Message], flag: Boolean) extends Message
+  case class SetTurn(turn: ActorRef[Message]) extends Message
+  case class ReadFlagAndTurn(from:ActorRef[Message], of: ActorRef[Message]) extends Message
+  case class ReadFlagAndTurnReply(flag: Boolean, turn: Option[ActorRef[Message]]) extends Message
+  case class EnableSharedMemory(sharedMemory: ActorRef[Message]) extends Message
+}
+
+
 object RicartaAgarwalProtocol{
 
   case class RequestCS(timestamp: Long, from: ActorRef[Message]) extends Message

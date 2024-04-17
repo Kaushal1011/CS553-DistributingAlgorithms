@@ -5,10 +5,11 @@ import akka.actor.typed.scaladsl.{Behaviors, ActorContext}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
+import com.distcomp.sharedmemory.PetersonSharedMemActor
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
 import scala.util.Random
-
+import com.distcomp.common.PetersonTwoProcess._
 
 object SimulatorActor {
   def apply(): Behavior[SimulatorMessage] = behavior(Set.empty, Set.empty, List.empty)
@@ -90,6 +91,19 @@ object SimulatorActor {
         nodes.take(1).foreach(node => node ! InitiateSpanningTree)
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "peterson-two-process" =>
+        // spawn shared memory actor
+        val sharedMemory = context.spawn(PetersonSharedMemActor(nodes), "shared-memory")
+
+        nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
+
+        Thread.sleep(2000) // wait for shared memory to be ready
+
+        context.log.info("Executing Peterson's two process algorithm.")
+        nodes.take(2).foreach(node => node ! StartCriticalSectionRequest)
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 2)
 
       case "agrawal-elabbadi" =>
         context.log.info("Executing Agrawal-ElAbbadi algorithm.")

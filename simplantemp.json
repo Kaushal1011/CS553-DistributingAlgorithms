@@ -1,16 +1,14 @@
 {
   "steps": [
     {
-      "dotFilePath": "ExampleNetwork.dot",
+      "dotFilePath": "Peterson2.dot",
       "isDirected": false,
       "createRing": false,
       "createClique": false,
-      "createBinTree": true,
-      "enableFailureDetector": true,
-      "algorithm": "agrawal-elabbadi",
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "peterson-two-process",
       "additionalParameters": {
-        "initiators": 5,
-        "additional": 0,
         "kill": 1
       }
     }
