@@ -55,6 +55,14 @@ object PetersonTwoProcess{
   case class EnableSharedMemory(sharedMemory: ActorRef[Message]) extends Message
 }
 
+object PetersonTournamentProtocol{
+  case class SetFlagTournament(internalNode: Int, bitFlag: Int, flag: Boolean) extends Message
+  case class SetTurnTournament(internalNode: Int, bitFlag: Int) extends Message
+  case class ReadFlagAndTurnTournament(from: ActorRef[Message], internalNode: Int, bitFlag: Int) extends Message
+  case class ReadFlagAndTurnTournamentReply(flag: Boolean, turn: Int, internaleNode: Int) extends Message
+
+}
+
 
 object RicartaAgarwalProtocol{
 

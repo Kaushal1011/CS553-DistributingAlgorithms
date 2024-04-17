@@ -1,6 +1,20 @@
 {
   "steps": [
     {
+      "dotFilePath": "PetersonT.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "peterson-tournament",
+      "additionalParameters": {
+        "initiators": 4,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
       "dotFilePath": "Peterson2.dot",
       "isDirected": false,
       "createRing": false,

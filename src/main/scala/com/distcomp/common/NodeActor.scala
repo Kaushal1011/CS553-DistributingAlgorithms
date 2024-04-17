@@ -7,6 +7,7 @@ import com.distcomp.election.ChangRoberts
 import com.distcomp.mutex.RicartaAgarwal
 import com.distcomp.mutex.RicartaAgarwalCarvalhoRoucairol
 import com.distcomp.mutex.PetersonTwoProcess
+import com.distcomp.mutex.PetersonTournament
 import com.distcomp.mutex.NodeActorBinaryTree
 
 object NodeActor {
@@ -83,6 +84,10 @@ object NodeActor {
               context.log.info("Switching to Peterson's Two Process Algorithm")
               val node2 = edges.keys.head
               PetersonTwoProcess(node2, None, simulator)
+            case "peterson-tournament" =>
+              context.log.info("Switching to Peterson's Tournament Algorithm")
+              PetersonTournament(edges.keySet, None ,simulator)
+
             case "chang-roberts" =>
               val nextNodesMap = edges.map { case (currentNode, _) =>
                 val nextNode = edges.getOrElse(currentNode, {

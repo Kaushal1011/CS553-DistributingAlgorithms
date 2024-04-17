@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{Behaviors, ActorContext}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
-import com.distcomp.sharedmemory.PetersonSharedMemActor
+import com.distcomp.sharedmemory.{PetersonSharedMemActor, PetersonTournamentSharedMemActor}
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
 import scala.util.Random
@@ -104,6 +104,27 @@ object SimulatorActor {
         nodes.take(2).foreach(node => node ! StartCriticalSectionRequest)
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 2)
+
+      case "peterson-tournament" =>
+        context.log.info("Executing Peterson's tournament algorithm.")
+        val sharedMemory = context.spawn(PetersonTournamentSharedMemActor(nodes), "shared-memory-pt")
+
+        nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
+
+        Thread.sleep(2000) // wait for shared memory to be ready
+
+        context.log.info("Executing Peterson's tournament algorithm.")
+
+        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
 
       case "agrawal-elabbadi" =>
         context.log.info("Executing Agrawal-ElAbbadi algorithm.")
