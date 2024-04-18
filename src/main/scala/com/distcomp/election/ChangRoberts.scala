@@ -14,8 +14,7 @@ object ChangRoberts {
       val nextNodeRef = edges.keys.head
 
       active(nodeId, nextNodeRef, simulator)
-  }
-
+    }
   }
 
   private def active(nodeId: String,

@@ -8,6 +8,8 @@ import com.distcomp.mutex.RicartaAgarwal
 import com.distcomp.mutex.RicartaAgarwalCarvalhoRoucairol
 import com.distcomp.mutex.NodeActorBinaryTree
 import com.distcomp.election.Franklin
+import com.distcomp.election.DolevKlaweRodeh
+import com.distcomp.election.TreeElection
 
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
@@ -85,6 +87,12 @@ object NodeActor {
             case "franklin" =>
               context.log.info("Switching to Franklin Election Algorithm")
               Franklin(context.self.path.name,  edges.keySet, edges, simulator)
+            case "dolev-klawe-rodeh" =>
+              context.log.info("Switiching to Dolev-Klawe Rodeh Algorithm")
+              DolevKlaweRodeh(context.self.path.name,edges.keySet,edges, simulator)
+//            case "tree-election" =>
+//              context.log.info(s"Switching to Tree Election Algorithm")
+//              TreeElection()
             case _ =>
               context.log.info("Algorithm not recognized in nodeActor")
               Behaviors.unhandled

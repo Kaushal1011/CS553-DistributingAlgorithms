@@ -113,19 +113,27 @@ object SimulatorActor {
         nodes.take(numInitiators).foreach(node => node ! StartElection)
 
         // nodes go into election mode once election leader is appointed it sends termination message to simulator
-
         // termination detection here is not weight throwing it just expects one reply from leader
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps,intialiser, 1)
       case "franklin" =>
         context.log.info("Executing Franklin Algorithm")
-
+        Thread.sleep(2000)
 //        context.log.info(s"$nodes")
 
         // randomly take x initiators and send initate message to start election
         nodes.take(numInitiators).foreach(node => node ! StartElection)
 
         behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+      case "dolev-klawe-rodeh" =>
+        context.log.info("Executing Dolev-Klawe-Rodeh Algorithm")
+
+        Thread.sleep(1000)
+        // randomly take x initiators and send initate message to start election
+        nodes.take(numInitiators).foreach(node => node ! StartElection)
+
+        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+
       case _ =>
         context.log.info("Algorithm not recognized in Simulator .")
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)

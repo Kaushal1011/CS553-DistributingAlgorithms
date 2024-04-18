@@ -16,6 +16,33 @@
     },
     {
       "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": true,
+      "enableFailureDetector": false,
+      "algorithm": "tree-election",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
+    },{
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": true,
+      "createRing": true,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "dolev-klawe-rodeh",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
       "isDirected": true,
       "createRing": true,
       "createClique": false,

@@ -89,16 +89,17 @@ object ChangRobertsProtocol{
 }
 
 object FranklinProtocol{
-  case class ElectionMessageFP(candidateId: String, round: Int, from: ActorRef[Message]) extends Message
+  case class ElectionMessageFP(candidateId: String, round: Int, from: ActorRef[Message], direction: String) extends Message
+
 
 }
 
 object DolevKlaweRodehProtocol{
-  case class ElectionMessageDKRP(id: String, round: Int, from: ActorRef[Message]) extends Message
-  case class ForwardMessage(id: String, from: ActorRef[Message], marker: Int) extends Message
+  case class ElectionMessageDKRP(candidateId: String, round: Int, from: ActorRef[Message]) extends Message
+  case class ForwardMessage(id: String, round: Int, from: ActorRef[Message], marker: Int) extends Message
 
 }
 
 object TreeElectionProtocol{
-
+  case class ElectionMessageTE(candidateId: String, round: Int, from: ActorRef[Message]) extends Message
 }
