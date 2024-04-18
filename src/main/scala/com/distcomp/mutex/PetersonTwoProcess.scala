@@ -45,7 +45,7 @@ object PetersonTwoProcess {
             }
             sharedMemoryRef ! ReadFlagAndTurn( context.self, node2)
           } else {
-            context.log.info(s"Node ${context.self.path.name} entering critical section")
+//            context.log.info(s"Node ${context.self.path.name} entering critical section")
             context.self ! EnterCriticalSection
           }
           Behaviors.same
