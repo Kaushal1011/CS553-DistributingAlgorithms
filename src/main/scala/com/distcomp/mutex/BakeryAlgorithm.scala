@@ -124,6 +124,8 @@ object BakeryAlgorithm {
         case EnableSharedMemory(sharedMemory) =>
           active(nodes, Some(sharedMemory), simulator)
 
+        case _ => Behaviors.unhandled
+
 
       }
     })
