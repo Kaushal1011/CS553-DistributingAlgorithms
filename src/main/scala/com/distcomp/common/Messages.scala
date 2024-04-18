@@ -60,6 +60,16 @@ object PetersonTournamentProtocol{
   case class SetTurnTournament(internalNode: Int, bitFlag: Int) extends Message
   case class ReadFlagAndTurnTournament(from: ActorRef[Message], internalNode: Int, bitFlag: Int) extends Message
   case class ReadFlagAndTurnTournamentReply(flag: Boolean, turn: Int, internaleNode: Int) extends Message
+}
+
+object BakeryProtocol{
+  case class SetChoosing(forNode: ActorRef[Message],choosing: Boolean) extends Message
+  case class SetChoosingReply(choosing: Boolean) extends Message
+  case class ReadNumbers(from: ActorRef[Message]) extends Message
+  case class ReadNumbersReply(numbers: Map[ActorRef[Message], Int]) extends Message
+  case class SetNumber(forNode: ActorRef[Message], number: Int) extends Message
+  case class GetChoosingAndNumber(from: ActorRef[Message]) extends Message
+  case class GetChoosingAndNumberReply(choosing: Map[ActorRef[Message], Boolean], numbers: Map[ActorRef[Message], Int]) extends Message
 
 }
 

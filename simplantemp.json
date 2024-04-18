@@ -7,22 +7,10 @@
       "createClique": true,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "peterson-tournament",
+      "algorithm": "bakery",
       "additionalParameters": {
-        "initiators": 4,
+        "initiators": 3,
         "additional": 0,
-        "kill": 1
-      }
-    },
-    {
-      "dotFilePath": "Peterson2.dot",
-      "isDirected": false,
-      "createRing": false,
-      "createClique": false,
-      "createBinTree": false,
-      "enableFailureDetector": false,
-      "algorithm": "peterson-two-process",
-      "additionalParameters": {
         "kill": 1
       }
     }
