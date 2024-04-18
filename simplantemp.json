@@ -2,6 +2,20 @@
   "steps": [
     {
       "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": true,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "franklin",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
       "isDirected": true,
       "createRing": true,
       "createClique": false,

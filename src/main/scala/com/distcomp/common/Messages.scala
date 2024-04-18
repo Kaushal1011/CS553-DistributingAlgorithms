@@ -89,7 +89,7 @@ object ChangRobertsProtocol{
 }
 
 object FranklinProtocol{
-  case class ElectionMessageFP(id: String, round: Int, from: ActorRef[Message]) extends Message
+  case class ElectionMessageFP(candidateId: String, round: Int, from: ActorRef[Message]) extends Message
 
 }
 

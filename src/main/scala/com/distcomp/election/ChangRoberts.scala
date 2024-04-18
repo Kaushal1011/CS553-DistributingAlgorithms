@@ -25,8 +25,10 @@ object ChangRoberts {
       message match {
         case StartElection =>
           context.log.info(s"$nodeId started election")
+//          context.log.info(s"$nextNode is the next Node")
           nextNode ! ElectionMessageCRP(nodeId, context.self)
           active(nodeId, nextNode,simulator)
+
         case ElectionMessageCRP(candidateId, from) =>
           context.log.info(s"$nodeId received Election messager from $candidateId")
           if (extractId(candidateId) < extractId(nodeId)) {
