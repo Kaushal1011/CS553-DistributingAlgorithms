@@ -1,15 +1,29 @@
 {
   "steps": [
     {
-      "dotFilePath": "PetersonT.dot",
+      "dotFilePath": "ExampleNetwork.dot",
       "isDirected": false,
       "createRing": false,
-      "createClique": true,
+      "createClique": false,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "bakery",
+      "algorithm": "test-and-test-and-set",
       "additionalParameters": {
-        "initiators": 3,
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "test-and-set",
+      "additionalParameters": {
+        "initiators": 5,
         "additional": 0,
         "kill": 1
       }

@@ -73,6 +73,14 @@ object BakeryProtocol{
 
 }
 
+object TestAndSetSharedMemProtocol{
+  case class SetLockRequest(from: ActorRef[Message]) extends Message
+  case class SetLockResponse(lock: Boolean) extends Message
+  case class ReadLockRequest(from: ActorRef[Message]) extends Message
+  case class ReadLockResponse(from: ActorRef[Message], lock: Boolean) extends Message
+  case object UnlockRequest extends Message
+}
+
 
 object RicartaAgarwalProtocol{
 

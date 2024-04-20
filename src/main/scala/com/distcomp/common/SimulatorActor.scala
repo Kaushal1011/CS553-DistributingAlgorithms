@@ -5,7 +5,7 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
-import com.distcomp.sharedmemory.{PetersonSharedMemActor, PetersonTournamentSharedMemActor, BakerySharedMemActor}
+import com.distcomp.sharedmemory.{PetersonSharedMemActor, PetersonTournamentSharedMemActor, BakerySharedMemActor, TestAndSetSharedMemActor}
 
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
@@ -155,6 +155,48 @@ object SimulatorActor {
         Thread.sleep(2000) // wait for shared memory to be ready
 
         context.log.info("Executing Bakery algorithm.")
+        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "test-and-set" =>
+        context.log.info("Executing Test-and-Set algorithm.")
+        // spawn shared memory actor
+        val sharedMemory = context.spawn(TestAndSetSharedMemActor(), "shared-memory-tas" + Instant.now.getEpochSecond.toString)
+
+        nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
+
+        Thread.sleep(2000) // wait for shared memory to be ready
+
+        context.log.info("Executing Test-and-Set algorithm.")
+        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "test-and-test-and-set" =>
+        context.log.info("Executing Test-and-Test-and-Set algorithm.")
+        // spawn shared memory actor
+        val sharedMemory = context.spawn(TestAndSetSharedMemActor(), "shared-memory-ttas" + Instant.now.getEpochSecond.toString)
+
+        nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
+
+        Thread.sleep(2000) // wait for shared memory to be ready
+
+        context.log.info("Executing Test-and-Test-and-Set algorithm.")
         nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
 
         Thread.sleep(2000)

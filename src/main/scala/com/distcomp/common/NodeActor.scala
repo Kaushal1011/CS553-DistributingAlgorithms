@@ -4,7 +4,7 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 import com.distcomp.election.ChangRoberts
-import com.distcomp.mutex.{RicartaAgarwal,RicartaAgarwalCarvalhoRoucairol,NodeActorBinaryTree,PetersonTwoProcess,PetersonTournament,BakeryAlgorithm}
+import com.distcomp.mutex.{RicartaAgarwal,RicartaAgarwalCarvalhoRoucairol,NodeActorBinaryTree,PetersonTwoProcess,PetersonTournament,BakeryAlgorithm, TestAndSetMutex, TestAndTestAndSetMutex}
 
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
@@ -86,6 +86,12 @@ object NodeActor {
             case "bakery" =>
               context.log.info("Switching to Bakery Algorithm")
               BakeryAlgorithm(edges.keySet, None, simulator)
+            case "test-and-set" =>
+              context.log.info("Switching to Test-and-Set Mutex Algorithm")
+              TestAndSetMutex(None, simulator)
+            case "test-and-test-and-set" =>
+              context.log.info("Switching to Test-and-Test-and-Set Mutex Algorithm")
+              TestAndTestAndSetMutex(None, simulator)
             case "chang-roberts" =>
               val nextNodesMap = edges.map { case (currentNode, _) =>
                 val nextNode = edges.getOrElse(currentNode, {
