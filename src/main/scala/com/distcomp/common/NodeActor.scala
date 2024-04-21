@@ -4,6 +4,10 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 import com.distcomp.election.ChangRoberts
+import com.distcomp.election.Franklin
+import com.distcomp.election.DolevKlaweRodeh
+import com.distcomp.election.TreeElection
+import com.distcomp.election.EchoElection
 import com.distcomp.mutex.{RicartaAgarwal,RicartaAgarwalCarvalhoRoucairol,NodeActorBinaryTree,PetersonTwoProcess,PetersonTournament,BakeryAlgorithm, TestAndSetMutex, TestAndTestAndSetMutex}
 
 object NodeActor {
@@ -93,14 +97,21 @@ object NodeActor {
               context.log.info("Switching to Test-and-Test-and-Set Mutex Algorithm")
               TestAndTestAndSetMutex(None, simulator)
             case "chang-roberts" =>
-              val nextNodesMap = edges.map { case (currentNode, _) =>
-                val nextNode = edges.getOrElse(currentNode, {
-                  throw new IllegalStateException(s"No next node found for node ${currentNode.path.name}")
-                })
-                (currentNode, nextNode)
-              }
-              context.log.info("Switching the algorithm to Chang-Roberts in nodeActor")
-              ChangRoberts(context.self.path.name,  edges.keySet, nextNodesMap)
+              context.log.info("Switching to ChangRoberts Election Algorithm")
+              ChangRoberts(context.self.path.name,  edges.keySet, edges, simulator)
+            case "franklin" =>
+              context.log.info("Switching to Franklin Election Algorithm")
+              Franklin(context.self.path.name,  edges.keySet, edges, simulator)
+            case "dolev-klawe-rodeh" =>
+              context.log.info("Switiching to Dolev-Klawe Rodeh Algorithm")
+              DolevKlaweRodeh(context.self.path.name,edges.keySet,edges, simulator)
+//            case "tree-election" =>
+//              context.log.info(s"Switching to Tree Election Algorithm")
+//              TreeElection()
+            case "echo-election" =>
+              context.log.info(s"Switching to Echo Election Algorithm")
+              EchoElection(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+
             case _ =>
               context.log.info("Algorithm not recognized in nodeActor")
               Behaviors.unhandled

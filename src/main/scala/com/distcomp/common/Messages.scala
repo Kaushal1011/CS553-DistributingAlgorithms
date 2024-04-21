@@ -113,23 +113,35 @@ object AgrawalElAbbadiProtocol{
   case class ReleaseCriticalSection(nodeId: ActorRef[Message]) extends Message
 }
 
-object ChangRobertsProtocol{
-  case class ElectionMessage(candidateId: String, from: ActorRef[Message]) extends Message
+object ElectionProtocol{
+  case object StartElection extends Message
+  case object StartNextRound extends Message
+
+  case object Winner extends Message
   case class VictoryMessage(leaderId: String) extends Message
+}
+
+object EchoElectionProtocol{
+  case class EchoMessageElection(sender: ActorRef[Message], initiator: ActorRef[Message]) extends Message
+}
+
+object ChangRobertsProtocol{
+  case class ElectionMessageCRP(candidateId: String, from: ActorRef[Message]) extends Message
+
 }
 
 object FranklinProtocol{
-  case class ElectionMessage(id: String, round: Int, from: ActorRef[Message]) extends Message
-  case class VictoryMessage(leaderId: String) extends Message
+  case class ElectionMessageFP(candidateId: String, round: Int, from: ActorRef[Message], direction: String) extends Message
+  case class SetRandomNodeId(newNodeId: String) extends Message
+
 }
 
 object DolevKlaweRodehProtocol{
-  case class ElectionMessage(id: String, round: Int, from: ActorRef[Message]) extends Message
-  case class ForwardMessage(id: String, from: ActorRef[Message], marker: Int) extends Message
-  case class VictoryMessage(leaderId: String) extends Message
+  case class ElectionMessageDKRP(candidateId: String, roundMsg: Int, msgStat: Int, from: ActorRef[Message]) extends Message
+  case class ForwardMessage(id: String, msgState: Int, from: ActorRef[Message]) extends Message
 
 }
 
 object TreeElectionProtocol{
-
+  case class ElectionMessageTE(candidateId: String, round: Int, from: ActorRef[Message]) extends Message
 }

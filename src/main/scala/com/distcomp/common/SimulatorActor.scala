@@ -5,7 +5,10 @@ import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
+import com.distcomp.common.ElectionProtocol._
+import com.distcomp.common.FranklinProtocol.SetRandomNodeId
 import com.distcomp.sharedmemory.{PetersonSharedMemActor, PetersonTournamentSharedMemActor, BakerySharedMemActor, TestAndSetSharedMemActor}
+
 
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
@@ -210,7 +213,56 @@ object SimulatorActor {
 
       case "chang-roberts" =>
         context.log.info("Executing Chang-Roberts Algorithm")
+
+        Thread.sleep(2000)
+        context.log.info(s"$nodes")
+
+        // randomly take x initiators and send initate message to start election
+        nodes.take(numInitiators).foreach(node => node ! StartElection)
+
+        // nodes go into election mode once election leader is appointed it sends termination message to simulator
+        // termination detection here is not weight throwing it just expects one reply from leader
+
         behaviorAfterInit(nodes, readyNodes, simulationSteps,intialiser, 1)
+      case "franklin" =>
+        context.log.info("Executing Franklin Algorithm")
+        Thread.sleep(2000)
+
+        val nodeIds = nodes.map(node => node.path.name)
+        // shuffle the nodes
+        val shuffledNodeIds = Random.shuffle(nodeIds.toList)
+
+        // set new ids to nodes
+        nodes.zipWithIndex.foreach { case (node, index) =>
+          node ! SetRandomNodeId(shuffledNodeIds(index))
+        }
+        // wait for new ids
+        Thread.sleep(2000)
+
+//        context.log.info(s"$nodes")
+
+        // randomly take x initiators and send initate message to start election
+        nodes.take(numInitiators).foreach(node => node ! StartElection)
+
+        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+      case "echo-election" =>
+        context.log.info("Executing Echo Election Algorithm")
+
+        Thread.sleep(2000)
+        // randomly take x initiators and send initate message to start election
+        nodes.take(numInitiators).foreach(node => node ! StartElection)
+
+        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+
+      case "dolev-klawe-rodeh" =>
+        context.log.info("Executing Dolev-Klawe-Rodeh Algorithm")
+
+        Thread.sleep(1000)
+        // randomly take x initiators and send initate message to start election
+        nodes.take(numInitiators).foreach(node => node ! StartElection)
+
+        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+
       case _ =>
         context.log.info("Algorithm not recognized in Simulator .")
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
@@ -300,6 +352,7 @@ object SimulatorActor {
             if (step.additionalParameters.getOrElse("kill", 0) == 1) {
               context.log.info("Killing all nodes.")
               intialiser ! KillAllNodes
+              Thread.sleep(3000)
             }
 
             Thread.sleep(1000)

@@ -1,66 +1,165 @@
 package com.distcomp.election
-
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
-import com.distcomp.common.Message
+import com.distcomp.common.{Message, SetEdges, SimulatorProtocol}
 import com.distcomp.common.FranklinProtocol._
+import com.distcomp.common.ElectionProtocol._
+import com.distcomp.common.SimulatorProtocol._
+import com.distcomp.common.utils.extractId
 
-object Franklin {
-  def apply(nodeId: String, leftNeighbor: ActorRef[Message], rightNeighbor: ActorRef[Message]): Behavior[Message] = {
-    println(s"Node $nodeId starting Franklin algorithm")
-    initiateRound(nodeId, leftNeighbor, rightNeighbor, 0)
+object Franklin{
+
+  def apply(nodeId: String, nodes: Set[ActorRef[Message]], edges: Map[ActorRef[Message], Int],
+            simulator: ActorRef[SimulatorMessage]): Behavior[Message] = { Behaviors.setup {
+    (context) =>
+      // during setup we need to set the edges previous and next based on ordering of nodes
+      // for simulation, simulator shufles ids later so election can progress in rounds
+
+//      context.log.info("Franklin Algorithm in apply")
+      // this assumes first node is always 0
+      if (nodeId =="0") {
+        val nextNodeRef = edges.keys.minBy(e => extractId(e.path.name))
+        val prevNodeRef = edges.keys.maxBy(e => extractId(e.path.name))
+//        context.log.info(s"edges for 0 node are ${edges.keys}")
+        context.log.info(s"$nodeId started election with next node ${nextNodeRef.path.name} and prev node ${prevNodeRef.path.name}")
+        passive(nodeId, nextNodeRef, prevNodeRef, 0, simulator)
+      }
+      else {
+        val prevNodeRef = edges.keys.find(e => extractId(e.path.name) == extractId(nodeId) - 1).getOrElse(edges.keys.maxBy(e => extractId(e.path.name)))
+        // current node id + 1 or 0
+        val nextNodeRef = edges.keys.find(e => extractId(e.path.name) == extractId(nodeId) + 1).getOrElse(edges.keys.minBy(e => extractId(e.path.name)))
+        context.log.info(s"$nodeId started election with next node ${nextNodeRef.path.name} and prev node ${prevNodeRef.path.name}")
+        passive(nodeId, nextNodeRef, prevNodeRef, 0, simulator)
+      }
+
+    }
   }
-
-  private def initiateRound(nodeId: String, leftNeighbor: ActorRef[Message], rightNeighbor: ActorRef[Message], round: Int): Behavior[Message] = {
-    leftNeighbor ! ElectionMessage(nodeId, round, leftNeighbor)
-    rightNeighbor ! ElectionMessage(nodeId, round, rightNeighbor)
-    active(nodeId, leftNeighbor, rightNeighbor, nodeId, nodeId, round)
-  }
-
-  private def active(
-                      nodeId: String,
-                      leftNeighbor: ActorRef[Message],
-                      rightNeighbor: ActorRef[Message],
-                      maxLeftId: String,
-                      maxRightId: String,
-                      round: Int
-                    ):  Behavior[Message] = Behaviors.receive { (context, message) =>
-    message match {
-      case ElectionMessage(candidateId, candidateRound, from) =>
-        val updatedMaxLeftId = if (from == leftNeighbor && candidateRound == round) candidateId else maxLeftId
-        val updatedMaxRightId = if (from == rightNeighbor && candidateRound == round) candidateId else maxRightId
-
-        if (updatedMaxLeftId != maxLeftId || updatedMaxRightId != maxRightId) {
-          // Decide on action based on new values
-          val maxId = List(updatedMaxLeftId, updatedMaxRightId, nodeId).max
-          if (maxId > nodeId) {
-            passive(nodeId)
-          } else if (maxId == nodeId) {
-            leftNeighbor ! VictoryMessage(nodeId)
-            rightNeighbor ! VictoryMessage(nodeId)
-            leaderBehavior(nodeId)
-          } else {
-            initiateRound(nodeId, leftNeighbor, rightNeighbor, round + 1)
-          }
-        } else {
+  def active(nodeId:String, nextNode: ActorRef[Message], prevNode: ActorRef[Message], round: Int,
+             nextId: Option[String] , prevId:Option[String],
+             simulator: ActorRef[SimulatorMessage]): Behavior[Message] =
+   Behaviors.receive { (context, message) =>
+     message match {
+       case StartElection =>
+//         context.log.info(s"$nodeId started election")
+         // send id on either side of the ring
+          nextNode ! ElectionMessageFP(nodeId, 0, context.self, "r")
+          prevNode ! ElectionMessageFP(nodeId, 0, context.self, "l")
           Behaviors.same
-        }
-      case VictoryMessage(leaderId) =>
-        leftNeighbor ! VictoryMessage(leaderId)
-        rightNeighbor ! VictoryMessage(leaderId)
-        Behaviors.stopped
+
+        case ElectionMessageFP(candidateId, roundMes, from, direction) =>
+//          context.log.info(s"$nodeId received Election message from $from")
+          if (direction == "l" && roundMes == round ){
+            val nextIdNum = extractId(Some(candidateId).get)
+            val prevIdNum = extractId(prevId.getOrElse("node--1"))
+            val curIdNum = extractId(nodeId)
+
+            if (nextIdNum == curIdNum){
+              context.self ! Winner
+
+              // go to next round
+              passive(nodeId, nextNode, prevNode, round, simulator)
+            }
+
+            if (prevId.isEmpty){
+              active(nodeId, nextNode, prevNode, round, Some(candidateId), prevId, simulator)
+            }else{
+
+              val maxId = Math.max(Math.max(nextIdNum, prevIdNum), curIdNum)
+
+              if (maxId == curIdNum){
+                context.log.info(s"$nodeId is the winner for round $round")
+
+                context.self ! StartNextRound
+                // go to next round
+                active(nodeId, nextNode, prevNode, round + 1, None, None, simulator)
+              }
+              else {
+                passive(nodeId, nextNode, prevNode, round, simulator)
+              }
+            }
+
+          }
+          else if (direction == "r" && roundMes == round){
+            val nextIdNum = extractId(nextId.getOrElse("node--1"))
+            val prevIdNum = extractId(Some(candidateId).get)
+            val curIdNum = extractId(nodeId)
+
+            if (prevIdNum == curIdNum){
+              context.self ! Winner
+
+              // go to next round
+              passive(nodeId, nextNode, prevNode, round, simulator)
+            }
+
+            if (nextId.isEmpty){
+              active(nodeId, nextNode, prevNode, round, nextId, Some(candidateId), simulator)
+            }
+            else {
+
+
+              val maxId = Math.max(Math.max(nextIdNum, prevIdNum), curIdNum)
+
+              if (maxId == curIdNum){
+                context.log.info(s"$nodeId is the winner for round $round")
+                context.self ! StartNextRound
+                // go to next round
+                active(nodeId, nextNode, prevNode, round + 1, None, None, simulator)
+              }else{
+                passive(nodeId, nextNode, prevNode, round, simulator)
+              }
+            }
+          }
+          else if (roundMes > round){
+            // rn nothing but queue can be used to store messages
+            context.log.info(s"$nodeId received Election message from $from but different round")
+            Behaviors.same
+          }
+          else{
+            Behaviors.same
+          }
+
+         case StartNextRound =>
+            context.log.info(s"$nodeId started next round")
+            Thread.sleep(1000)
+            nextNode ! ElectionMessageFP(nodeId, round, context.self, "r")
+            prevNode ! ElectionMessageFP(nodeId, round, context.self, "l")
+            Behaviors.same
+
+       case Winner =>
+         context.log.info(s"$nodeId is the winner original id ${context.self.path.name}")
+         simulator ! SimulatorProtocol.AlgorithmDone
+         Behaviors.same
+
+
+       case _ => Behaviors.unhandled
+     }
+   }
+
+  def passive(nodeId:String, nextNode: ActorRef[Message], prevNode: ActorRef[Message], round: Int,
+              simulator: ActorRef[SimulatorMessage]): Behavior[Message] =
+    Behaviors.receive { (context, message) =>
+      message match {
+        case StartElection =>
+          context.log.info(s"$nodeId started election with request from sim")
+          context.self ! StartElection
+          active(nodeId, nextNode, prevNode, 0, None, None, simulator)
+        case ElectionMessageFP(candidateId, round, from, direction) =>
+//          context.log.info(s"$nodeId received Election message from $from")
+          if (direction == "l"){
+            prevNode ! ElectionMessageFP(candidateId, round, context.self, "l")
+          }
+          else if (direction == "r"){
+            nextNode ! ElectionMessageFP(candidateId, round, context.self, "r")
+          }
+          Behaviors.same
+        case Winner =>
+          context.log.info(s"$nodeId is the winner ${context.self.path.name}")
+          simulator ! SimulatorProtocol.AlgorithmDone
+          Behaviors.same
+        case SetRandomNodeId(newNodeId) =>
+          passive(newNodeId, nextNode, prevNode, round, simulator)
+
+        case _ => Behaviors.unhandled
+      }
     }
-  }
-    // Passive behavior of the node after it has acknowledged a higher ID
-    private def passive(nodeId: String): Behavior[Message] = Behaviors.receiveMessage {
-      case VictoryMessage(leaderId) =>
-        println(s"Node $nodeId recognizes Node $leaderId as the leader.")
-        Behaviors.stopped
-      case _ =>
-        Behaviors.same
-    }
-  // Behavior of the node once it is the leader
-  private def leaderBehavior(leaderId: String): Behavior[Message] = Behaviors.receiveMessage { message =>
-    Behaviors.unhandled
-  }
 }
