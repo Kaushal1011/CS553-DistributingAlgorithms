@@ -386,7 +386,9 @@ object SimulatorActor {
 
           if (remainingSteps.isEmpty) {
             context.log.info("Simulation complete.")
-            behavior(nodes, readyNodes, remainingSteps)
+            //            stop the system
+
+            Behaviors.stopped
           }
           else{
             val step = remainingSteps.head

@@ -33,3 +33,4 @@ libraryDependencies ++= Seq(
 
 resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 
+Test / unmanagedResourceDirectories += (Test / baseDirectory).value / "resources"

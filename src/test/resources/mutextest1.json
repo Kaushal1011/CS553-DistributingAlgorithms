@@ -2,15 +2,15 @@
   "steps": [
     {
       "dotFilePath": "ExampleNetwork.dot",
-      "isDirected": true,
-      "createRing": true,
-      "createClique": false,
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "test-and-test-and-set",
+      "algorithm": "ricart-agarwala",
       "additionalParameters": {
         "initiators": 5,
-        "additional": 0,
+        "additional": 7,
         "kill": 1
       }
     }
