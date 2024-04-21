@@ -1,17 +1,16 @@
 package com.distcomp
 
 import akka.Done
-import akka.actor.testkit.typed.scaladsl.{ActorTestKit, TestProbe}
-import akka.actor.typed.{ActorSystem, Terminated}
-import akka.actor.typed.scaladsl.Behaviors
-import com.distcomp.Main.simulationPlanFileName
+import akka.actor.testkit.typed.scaladsl.ActorTestKit
+import akka.actor.typed.ActorSystem
+
 import org.scalatest.wordspec.AnyWordSpecLike
 import java.io.PrintWriter
 import scala.io.Source
 import com.typesafe.config.ConfigFactory
 import com.distcomp.common.{Intialiser, SimulatorActor, SimulatorProtocol}
 
-import scala.concurrent.{Await, Future, TimeoutException}
+import scala.concurrent.{Await, TimeoutException}
 
 
 class MutexSimulationTest extends AnyWordSpecLike {

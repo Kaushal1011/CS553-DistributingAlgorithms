@@ -12,7 +12,7 @@ import com.distcomp.common.utils.extractId
 object RicartaAgarwal {
   def apply(nodeId: String, nodes: Set[ActorRef[Message]], edges: Map[ActorRef[Message], Int], simulator: ActorRef[SimulatorProtocol.SimulatorMessage], timeStamp: Int): Behavior[Message] = {
 
-    println(s" in Behaviour Node $nodeId starting Ricarta-Agarwal algorithm")
+//    println(s" in Behaviour Node $nodeId starting Ricarta-Agarwal algorithm")
 
     active(nodeId, nodes,edges, simulator, mutable.Set.empty[ActorRef[Message]],false ,false, timeStamp)
   }
