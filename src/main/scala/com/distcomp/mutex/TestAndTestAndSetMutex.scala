@@ -21,6 +21,7 @@ object TestAndTestAndSetMutex {
     Behaviors.receive { (context, message) =>
       message match {
         case StartCriticalSectionRequest =>
+          context.log.info(s"${context.self.path.name} starting critical section request")
           val sharedMemoryRef = sharedMemory.getOrElse(null)
           if (sharedMemoryRef == null) {
             context.log.error("Shared memory reference is null")
@@ -65,13 +66,13 @@ object TestAndTestAndSetMutex {
 
 
         case EnterCriticalSection =>
-          context.log.info(s"Node ${context.self.path.name} entering critical section")
+          context.log.info(s"${context.self.path.name} entering critical section")
           Thread.sleep(3000)
           context.self ! ExitCriticalSection
           Behaviors.same
 
         case ExitCriticalSection =>
-          context.log.info(s"Node ${context.self.path.name} exiting critical section")
+          context.log.info(s"${context.self.path.name} exiting critical section")
           val sharedMemoryRef = sharedMemory.getOrElse(null)
           if (sharedMemoryRef == null) {
             context.log.error("Shared memory reference is null")

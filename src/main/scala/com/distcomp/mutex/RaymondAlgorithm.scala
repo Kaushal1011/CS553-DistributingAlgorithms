@@ -12,6 +12,7 @@ object RaymondAlgorithm {
   def apply(parent: ActorRef[Message], children: Set[ActorRef[Message]], hasToken: Boolean, queue: List[ActorRef[Message]] = List(), simulator: ActorRef[SimulatorMessage], timestamp: Int): Behavior[Message] = Behaviors.receive { (context, message) =>
     message match {
       case StartCriticalSectionRequest =>
+        context.log.info(s"${context.self.path.name} starting critical section request")
         if (hasToken) {
           context.log.info(s"Node ${context.self.path.name} has the token, entering critical section initated by Simulator")
           context.self ! EnterCriticalSection
@@ -33,7 +34,7 @@ object RaymondAlgorithm {
         }
 
       case EnterCriticalSection =>
-        context.log.info(s"Node ${context.self.path.name} is entering the critical section")
+        context.log.info(s"${context.self.path.name} entering critical section")
         //  When a node enters its critical section, it removes itself from the queue
         val newQueue = queue.filterNot(_ == context.self)
         // exit critical section
@@ -44,7 +45,7 @@ object RaymondAlgorithm {
         //When the root has left its critical section and its queue is or becomes nonempty,
         //it sends the token to the process q at the head of its queue, makes q its parent, and
         //removes q’s ID from the head of its queue
-        context.log.info(s"Node ${context.self.path.name} has left the critical section")
+        context.log.info(s"${context.self.path.name} exiting critical section")
         if (queue.nonEmpty) {
           val head = queue.head
           head ! ReceiveToken(context.self)

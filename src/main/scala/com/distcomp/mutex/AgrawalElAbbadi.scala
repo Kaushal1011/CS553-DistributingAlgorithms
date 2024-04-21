@@ -48,7 +48,7 @@ object AgrawalElAbbadi {
       message match {
 
         case StartCriticalSectionRequest=>
-          context.log.info(s"Node $nodeId requesting critical section from start")
+          context.log.info(s"$nodeId starting critical section request")
 //            Queue root node in the quorum if root
 //          determine root from tree structure and queue it in the quorum
 //          lowest key in tree is root
@@ -137,7 +137,7 @@ object AgrawalElAbbadi {
 
         case EnterCriticalSection=>
 //          simulate critical section entry wait for sometime
-          context.log.info(s"Node $nodeId entering critical section")
+          context.log.info(s"$nodeId entering critical section")
           Thread.sleep(1000)
           context.self ! ExitCriticalSection
           Behaviors.same
@@ -145,7 +145,7 @@ object AgrawalElAbbadi {
         case ExitCriticalSection=>
 //          send simulator message to indicate completion of critical section
 //          send all nodes release message so they can withdraw old permission
-          context.log.info(s"Node $nodeId exiting critical section")
+          context.log.info(s"$nodeId exiting critical section")
           simulator ! AlgorithmDone
           tree.keys.foreach(node => node ! ReleaseCriticalSection(context.self))
           Behaviors.same

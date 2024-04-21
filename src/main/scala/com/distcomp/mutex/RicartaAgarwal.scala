@@ -58,7 +58,6 @@ object RicartaAgarwal {
           if (pendingReplies.isEmpty && ourTimestamp != 0) {
             // Now enter the critical section
             context.self ! EnterCriticalSection
-            context.log.info(s"$nodeId sending entering critical section")
           }
           Behaviors.same
 
