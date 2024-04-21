@@ -135,6 +135,7 @@ object Intialiser {
             }
 
           }
+          Thread.sleep(6000)
         }
 
         // Start the simulation after a delay to ensure all SetEdges messages have been processed

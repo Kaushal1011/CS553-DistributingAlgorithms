@@ -7,7 +7,21 @@
       "createClique": false,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "dolev-klawe-rodeh",
+      "algorithm": "test-and-test-and-set",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "test-and-set",
       "additionalParameters": {
         "initiators": 6,
         "additional": 0,

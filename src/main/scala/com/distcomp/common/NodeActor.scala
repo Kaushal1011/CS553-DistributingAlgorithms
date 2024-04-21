@@ -4,13 +4,11 @@ import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 import com.distcomp.election.ChangRoberts
-import com.distcomp.mutex.RicartaAgarwal
-import com.distcomp.mutex.RicartaAgarwalCarvalhoRoucairol
-import com.distcomp.mutex.NodeActorBinaryTree
 import com.distcomp.election.Franklin
 import com.distcomp.election.DolevKlaweRodeh
 import com.distcomp.election.TreeElection
 import com.distcomp.election.EchoElection
+import com.distcomp.mutex.{RicartaAgarwal,RicartaAgarwalCarvalhoRoucairol,NodeActorBinaryTree,PetersonTwoProcess,PetersonTournament,BakeryAlgorithm, TestAndSetMutex, TestAndTestAndSetMutex}
 
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
@@ -80,8 +78,24 @@ object NodeActor {
               context.log.info("Switching to Ricart-Agarwala Carvalho-Roucairol algorithm")
               RicartaAgarwalCarvalhoRoucairol(context.self.path.name, edges.keySet, edges, simulator, timestamp)
             case "raymonds-algo" =>
-              context.log.info("Switching to Spanning Tree Behavior, needs tree building")
-              SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+             context.log.info("Switching to Spanning Tree Behavior, needs tree building")
+             SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+            case "peterson-two-process" =>
+              context.log.info("Switching to Peterson's Two Process Algorithm")
+              val node2 = edges.keys.head
+              PetersonTwoProcess(node2, None, simulator)
+            case "peterson-tournament" =>
+              context.log.info("Switching to Peterson's Tournament Algorithm")
+              PetersonTournament(edges.keySet, None ,simulator)
+            case "bakery" =>
+              context.log.info("Switching to Bakery Algorithm")
+              BakeryAlgorithm(edges.keySet, None, simulator)
+            case "test-and-set" =>
+              context.log.info("Switching to Test-and-Set Mutex Algorithm")
+              TestAndSetMutex(None, simulator)
+            case "test-and-test-and-set" =>
+              context.log.info("Switching to Test-and-Test-and-Set Mutex Algorithm")
+              TestAndTestAndSetMutex(None, simulator)
             case "chang-roberts" =>
               context.log.info("Switching to ChangRoberts Election Algorithm")
               ChangRoberts(context.self.path.name,  edges.keySet, edges, simulator)

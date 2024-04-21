@@ -1,0 +1,5 @@
+digraph "Net Graph with 2 nodes" {
+edge ["class"="link-class"]
+"0" ["color"="red","label"=<<b>Init</b>>,"fontcolor"="#1020d0"]
+"0" -> "1" ["weight"="1.0"]
+}

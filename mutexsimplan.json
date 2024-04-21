@@ -95,6 +95,20 @@
       "additionalParameters": {
         "kill": 1
       }
+    },
+    {
+      "dotFilePath": "PetersonT.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "bakery",
+      "additionalParameters": {
+        "initiators": 3,
+        "additional": 0,
+        "kill": 1
+      }
     }
   ]
 }

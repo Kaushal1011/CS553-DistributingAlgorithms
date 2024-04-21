@@ -47,6 +47,41 @@ object MutexProtocol{
   case object ExitCriticalSection extends Message
 }
 
+object PetersonTwoProcess{
+  case class SetFlag(node: ActorRef[Message], flag: Boolean) extends Message
+  case class SetTurn(turn: ActorRef[Message]) extends Message
+  case class ReadFlagAndTurn(from:ActorRef[Message], of: ActorRef[Message]) extends Message
+  case class ReadFlagAndTurnReply(flag: Boolean, turn: Option[ActorRef[Message]]) extends Message
+  case class EnableSharedMemory(sharedMemory: ActorRef[Message]) extends Message
+}
+
+object PetersonTournamentProtocol{
+  case class SetFlagTournament(internalNode: Int, bitFlag: Int, flag: Boolean) extends Message
+  case class SetTurnTournament(internalNode: Int, bitFlag: Int) extends Message
+  case class ReadFlagAndTurnTournament(from: ActorRef[Message], internalNode: Int, bitFlag: Int) extends Message
+  case class ReadFlagAndTurnTournamentReply(flag: Boolean, turn: Int, internaleNode: Int) extends Message
+}
+
+object BakeryProtocol{
+  case class SetChoosing(forNode: ActorRef[Message],choosing: Boolean) extends Message
+  case class SetChoosingReply(choosing: Boolean) extends Message
+  case class ReadNumbers(from: ActorRef[Message]) extends Message
+  case class ReadNumbersReply(numbers: Map[ActorRef[Message], Int]) extends Message
+  case class SetNumber(forNode: ActorRef[Message], number: Int) extends Message
+  case class GetChoosingAndNumber(from: ActorRef[Message]) extends Message
+  case class GetChoosingAndNumberReply(choosing: Map[ActorRef[Message], Boolean], numbers: Map[ActorRef[Message], Int]) extends Message
+
+}
+
+object TestAndSetSharedMemProtocol{
+  case class SetLockRequest(from: ActorRef[Message]) extends Message
+  case class SetLockResponse(lock: Boolean) extends Message
+  case class ReadLockRequest(from: ActorRef[Message]) extends Message
+  case class ReadLockResponse(from: ActorRef[Message], lock: Boolean) extends Message
+  case object UnlockRequest extends Message
+}
+
+
 object RicartaAgarwalProtocol{
 
   case class RequestCS(timestamp: Long, from: ActorRef[Message]) extends Message
