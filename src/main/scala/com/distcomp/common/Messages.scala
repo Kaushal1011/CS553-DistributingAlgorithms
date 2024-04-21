@@ -80,7 +80,14 @@ object AgrawalElAbbadiProtocol{
 
 object ElectionProtocol{
   case object StartElection extends Message
+  case object StartNextRound extends Message
+
+  case object Winner extends Message
   case class VictoryMessage(leaderId: String) extends Message
+}
+
+object EchoElectionProtocol{
+  case class EchoMessageElection(sender: ActorRef[Message], initiator: ActorRef[Message]) extends Message
 }
 
 object ChangRobertsProtocol{
@@ -90,13 +97,13 @@ object ChangRobertsProtocol{
 
 object FranklinProtocol{
   case class ElectionMessageFP(candidateId: String, round: Int, from: ActorRef[Message], direction: String) extends Message
-
+  case class SetRandomNodeId(newNodeId: String) extends Message
 
 }
 
 object DolevKlaweRodehProtocol{
-  case class ElectionMessageDKRP(candidateId: String, round: Int, from: ActorRef[Message]) extends Message
-  case class ForwardMessage(id: String, round: Int, from: ActorRef[Message], marker: Int) extends Message
+  case class ElectionMessageDKRP(candidateId: String, roundMsg: Int, msgStat: Int, from: ActorRef[Message]) extends Message
+  case class ForwardMessage(id: String, msgState: Int, from: ActorRef[Message]) extends Message
 
 }
 

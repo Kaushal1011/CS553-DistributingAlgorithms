@@ -1,13 +1,16 @@
 package com.distcomp.common
 
-import akka.actor.typed.{ActorRef, Behavior }
-import akka.actor.typed.scaladsl.{Behaviors, ActorContext}
+import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
 import com.distcomp.common.ElectionProtocol._
+import com.distcomp.common.FranklinProtocol.SetRandomNodeId
+
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
+
 import scala.util.Random
 
 
@@ -119,12 +122,33 @@ object SimulatorActor {
       case "franklin" =>
         context.log.info("Executing Franklin Algorithm")
         Thread.sleep(2000)
+
+        val nodeIds = nodes.map(node => node.path.name)
+        // shuffle the nodes
+        val shuffledNodeIds = Random.shuffle(nodeIds.toList)
+
+        // set new ids to nodes
+        nodes.zipWithIndex.foreach { case (node, index) =>
+          node ! SetRandomNodeId(shuffledNodeIds(index))
+        }
+        // wait for new ids
+        Thread.sleep(2000)
+
 //        context.log.info(s"$nodes")
 
         // randomly take x initiators and send initate message to start election
         nodes.take(numInitiators).foreach(node => node ! StartElection)
 
         behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+      case "echo-election" =>
+        context.log.info("Executing Echo Election Algorithm")
+
+        Thread.sleep(2000)
+        // randomly take x initiators and send initate message to start election
+        nodes.take(numInitiators).foreach(node => node ! StartElection)
+
+        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+
       case "dolev-klawe-rodeh" =>
         context.log.info("Executing Dolev-Klawe-Rodeh Algorithm")
 

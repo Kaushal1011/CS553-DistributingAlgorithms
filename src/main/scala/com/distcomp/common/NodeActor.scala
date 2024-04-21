@@ -10,6 +10,7 @@ import com.distcomp.mutex.NodeActorBinaryTree
 import com.distcomp.election.Franklin
 import com.distcomp.election.DolevKlaweRodeh
 import com.distcomp.election.TreeElection
+import com.distcomp.election.EchoElection
 
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
@@ -93,6 +94,10 @@ object NodeActor {
 //            case "tree-election" =>
 //              context.log.info(s"Switching to Tree Election Algorithm")
 //              TreeElection()
+            case "echo-election" =>
+              context.log.info(s"Switching to Echo Election Algorithm")
+              EchoElection(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+
             case _ =>
               context.log.info("Algorithm not recognized in nodeActor")
               Behaviors.unhandled
