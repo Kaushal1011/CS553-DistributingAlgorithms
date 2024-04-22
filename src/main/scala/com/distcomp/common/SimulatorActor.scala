@@ -1,10 +1,18 @@
 package com.distcomp.common
 
 import akka.actor.typed.{ActorRef, Behavior}
-import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
 import com.distcomp.common.SimulatorProtocol._
+import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
+import com.distcomp.common.MutexProtocol._
+import com.distcomp.routing.{ChandyMisra, MerlinSegall}
+import com.distcomp.common.Routing._
+
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
+
+import scala.util.Random
+
 
 object SimulatorActor {
   def apply(): Behavior[SimulatorMessage] = behavior(Set.empty, Set.empty, List.empty)
@@ -14,6 +22,8 @@ object SimulatorActor {
                              isDirected: Boolean,
                              createRing: Boolean,
                              createClique: Boolean,
+                             createBinTree: Boolean,
+                             enableFailureDetector: Boolean,
                              algorithm: String,
                              additionalParameters: Map[String, Int] // Assuming all parameters are integers for simplicity
                            )
@@ -25,39 +35,256 @@ object SimulatorActor {
     // If additionalParameters has various types, you might need a custom Reads
   }
 
+  // Function to handle algorithm execution logic
+  private def executeAlgorithm(
+                        step: SimulationStep,
+                        nodes: Set[ActorRef[Message]],
+                        numInitiators: Int,
+                        additional: Int,
+                        context: ActorContext[SimulatorMessage],
+                        readyNodes: Set[String],
+                        simulationSteps: List[SimulationStep],
+                        intialiser: ActorRef[Message],
+                        numNodes: Option[Int] = None
+                      ): Behavior[SimulatorMessage] = {
+    step.algorithm match {
+      case "ricart-agarwala" =>
+        Thread.sleep(1000)
+        context.log.info("Starting Ricarta-Agarwal algorithm shuffling time stamps")
+        // Random timestamp to each node
+        nodes.foreach(node => node ! UpdateClock(Random.nextInt(10) + 27))
+
+        context.log.info("Time stamps shuffled. Starting critical section requests.")
+        Thread.sleep(1000)
+
+        nodes.take(numInitiators).foreach(_ ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "ra-carvalho" =>
+        Thread.sleep(1000)
+        context.log.info("Starting Ricarta-Agarwal algorithm shuffling time stamps")
+        // Random timestamp to each node
+        nodes.foreach(node => node ! UpdateClock(Random.nextInt(10) + 27))
+
+        context.log.info("Time stamps shuffled. Starting critical section requests.")
+        Thread.sleep(1000)
+
+        nodes.take(numInitiators).foreach(_ ! StartCriticalSectionRequest)
+
+        Thread.sleep(500)
+        //so we get some nodes which use last granted
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "raymonds-algo"=>
+        // select a node randomly for spanning tree root and then wait to complete and then start raymonds algorithm
+        context.log.info("Waiting for spanning tree to complete.")
+        nodes.take(1).foreach(node => node ! InitiateSpanningTree)
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "agrawal-elabbadi" =>
+        context.log.info("Executing Agrawal-ElAbbadi algorithm.")
+//        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+//
+//        Thread.sleep(2000)
+//
+//        if (additional > 0) {
+//          context.log.info("Adding additional initiators.")
+//          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+//        }
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+      case "chang-roberts" =>
+        context.log.info("Executing Chang-Roberts Algorithm")
+        behaviorAfterInit(nodes, readyNodes, simulationSteps,intialiser, 1)
+
+      case "chandy-misra" =>
+        Thread.sleep(1000)
+        context.log.info("Executing Chandy-Misra Algorithm")
+        nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
+        // expects only root to send termination messages to simulator for successful execution hence readyNodes.size is passes as repliesToWait
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
+
+      case "merlin-segall" =>
+
+        context.log.info("Waiting for spanning tree to complete.")
+        nodes.take(1).foreach(node => node ! InitiateSpanningTree)
+//        Thread.sleep(1000)
+//        context.log.info("Executing Merlin-Segall Algorithm")
+//        nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1, Some(readyNodes.size))
+//        context.log.info("Switching the algorithm to Merlin-Segall in nodeActor")
+//        MerlinSegall(context.self.path.name, readyNodes, simulationSteps, intialiser)
+//
+      case "toueg" =>
+        context.log.info("Executing Toueg Algorithm")
+        nodes.take(1).foreach(node => node ! InitiateRouting)
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
+
+      case "frederickson" =>
+        Thread.sleep(1000)
+        context.log.info("Executing Frederickson Algorithm")
+        nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
+        //
+
+
+
+
+      case _ =>
+        context.log.info("Algorithm not recognized in Simulator .")
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+    }
+  }
+
+
+  private def secondStepExecuteAlgorithm(
+                                       step: SimulationStep,
+                                       nodes: Set[ActorRef[Message]],
+                                       numInitiators: Int,
+                                       additional: Int,
+                                       context: ActorContext[SimulatorMessage],
+                                       readyNodes: Set[String],
+                                       simulationSteps: List[SimulationStep],
+                                       intialiser: ActorRef[Message]
+                                     ): Behavior[SimulatorMessage] = {
+
+    step.algorithm match {
+
+      case "raymonds-algo" =>
+        context.log.info("Executing Raymonds algorithm.")
+        nodes.take(numInitiators).foreach(_ ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "merlin-segall" =>
+        context.log.info("Executing Merlin-Segall Algorithm")
+        nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
+
+
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
+    }
+  }
+
+
+
   private def behaviorAfterInit(
                                   nodes: Set[ActorRef[Message]],
                                   readyNodes: Set[String],
                                   simulationSteps: List[SimulationStep],
-                                  intialiser: ActorRef[Message]
+                                  intialiser: ActorRef[Message],
+                                  repliesToWait: Int = 0,
+                                  numNodes: Option[Int] = None
                                 ): Behavior[SimulatorMessage] =
     Behaviors.receive { (context, message) =>
       message match {
         case RegisterNode(node, nodeId) =>
-          behaviorAfterInit(nodes + node, readyNodes, simulationSteps, intialiser)
+          behaviorAfterInit(nodes + node, readyNodes, simulationSteps, intialiser, repliesToWait)
 
         case NodeReady(nodeId) =>
           val updatedReadyNodes = readyNodes + nodeId
+//          context.log.info(s"Ready nodes: ${updatedReadyNodes.size}")
+//          context.log.info(s"Total nodes: ${nodes.size}")
+
           if (updatedReadyNodes.size == nodes.size) {
             context.log.info("All nodes are ready. Simulation can start.")
-            simulationSteps.headOption.foreach { step =>
-              nodes.foreach(_ ! SwitchToAlgorithm(step.algorithm, step.additionalParameters))
-            }
+            val step = simulationSteps.head
+            nodes.foreach(_ ! SwitchToAlgorithm(step.algorithm, step.additionalParameters))
+            val numInitiators = step.additionalParameters.getOrElse("initiators", 1)
+            val additional = step.additionalParameters.getOrElse("additional", 0)
+            executeAlgorithm(step, nodes, numInitiators, additional, context, updatedReadyNodes, simulationSteps, intialiser, numNodes)
+          }else {
+            behaviorAfterInit(nodes, updatedReadyNodes, simulationSteps, intialiser, repliesToWait)
           }
-          behaviorAfterInit(nodes, updatedReadyNodes, simulationSteps, intialiser)
+
+        case SpanningTreeCompletedSimCall(sender,parent,children) =>
+
+          if (sender.path.name == parent.path.name){
+            context.log.info("Spanning tree completed. got message from spanning tree builder. Proceeding to next step.")
+            val step = simulationSteps.head
+            nodes.foreach(_ ! SwitchToAlgorithm(step.algorithm, step.additionalParameters))
+            // wait for some time for all nodes to switch behavior before starting raymonds algorithm
+            Thread.sleep(2000)
+            val numInitiators = step.additionalParameters.getOrElse("initiators", 1)
+            val additional = step.additionalParameters.getOrElse("additional", 0)
+            secondStepExecuteAlgorithm(step, nodes, numInitiators, additional, context, readyNodes, simulationSteps, intialiser)
+          }
+          behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, repliesToWait)
 
         case AlgorithmDone =>
-          intialiser ! KillAllNodes
-          behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser)
+          context.log.info("Algorithm done.")
+          context.log.info(s"Replies to wait: $repliesToWait")
+          if (repliesToWait == 1) {
+            context.log.info("All nodes have completed the algorithm. Switching to next step.")
+            // check if step addition parameters has kill flag after completion of algorithm
+            val step = simulationSteps.head
+            if (step.additionalParameters.getOrElse("kill", 0) == 1) {
+              context.log.info("Killing all nodes.")
+              intialiser ! KillAllNodes
+            }
+
+            Thread.sleep(1000)
+
+            val remaingSteps = simulationSteps.tail
+
+            if (remaingSteps.nonEmpty && step.additionalParameters.getOrElse("kill", 0) == 0){
+              val nextStep = remaingSteps.head
+
+              context.log.info(s"Initialising network for step: $nextStep")
+
+              executeAlgorithm(nextStep, nodes, nextStep.additionalParameters.getOrElse("initiators", 1), nextStep.additionalParameters.getOrElse("additional", 0), context, readyNodes, remaingSteps, intialiser)
+
+              behaviorAfterInit(nodes, readyNodes, remaingSteps, intialiser, 1)
+            }
+            else if (remaingSteps.nonEmpty){
+              behaviorAfterInit(nodes, readyNodes, remaingSteps, intialiser, 1)
+            }
+            else {
+              context.log.info("Simulation complete.")
+              behaviorAfterInit(nodes, readyNodes, remaingSteps, intialiser, 1)
+            }
+
+
+          }
+          behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, repliesToWait - 1)
 
         case NodesKilled =>
           context.log.info("Nodes killed. Proceeding to next step.")
           val remainingSteps = simulationSteps.tail
-          remainingSteps.headOption.foreach { step =>
-            context.log.info(s"Initialising network for step: $step")
-            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, context.self)
+
+          if (remainingSteps.isEmpty) {
+            context.log.info("Simulation complete.")
+            behavior(nodes, readyNodes, remainingSteps)
           }
-          behavior(nodes, Set.empty, remainingSteps)
+          else{
+            val step = remainingSteps.head
+            context.log.info(s"Initialising network for step: $step")
+            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique,step.createBinTree, step.enableFailureDetector ,context.self)
+            behaviorAfterInit(Set.empty, Set.empty, remainingSteps, intialiser, 1)
+          }
 
         case _ => Behaviors.unhandled
       }
@@ -75,9 +302,9 @@ object SimulatorActor {
           val simulationSteps = (json \ "steps").as[List[SimulationStep]] // Define SimulationStep case class as per JSON structure
 
           simulationSteps.headOption.foreach { step =>
-            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, context.self)
+            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, step.createBinTree, step.enableFailureDetector, context.self)
           }
-          behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser)
+          behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
 
         case RegisterNode(node, nodeId) =>
           behavior(nodes + node, readyNodes, simulationSteps)

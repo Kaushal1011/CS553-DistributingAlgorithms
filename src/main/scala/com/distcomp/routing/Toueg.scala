@@ -1,72 +1,69 @@
-//package com.distcomp.routing
-//import akka.actor.typed.{ActorRef, Behavior}
-//import akka.actor.typed.scaladsl.{Behaviors, LoggerOps}
-//import scala.concurrent.duration._
-//import com.distcomp.common.TouegProtocol._
-//
-//object Toueg {
-//  private case object BroadcastTimeoutKey
-//  private case object BroadcastDistanceVector extends Message
-//
-//  def apply(nodeId: String, initialEdges: Map[ActorRef[Message], Int]): Behavior[Message] =
-//    Behaviors.setup { context =>
-//      Behaviors.withTimers { timers =>
-//        var edges = initialEdges
-//        var distanceVector = Map(nodeId -> 0) ++ edges.map { case (neighbor, weight) => neighbor.nodeId -> weight }
-//        var pendingUpdate = false
-//
-//        def scheduleBroadcast(): Unit = {
-//          if (!pendingUpdate) {
-//            context.log.info("Scheduling broadcast for node {}", nodeId)
-//            timers.startSingleTimer(BroadcastTimeoutKey, BroadcastDistanceVector, 500.milliseconds)
-//            pendingUpdate = true
-//          }
-//        }
-//
-//        def updateDistanceVector(fromNodeId: String, distances: Map[String, Int]): Boolean = {
-//          var updated = false
-//          distances.foreach { case (targetNodeId, distance) =>
-//            val edgeWeight = edges.find(_._1.nodeId == fromNodeId).map(_._2).getOrElse(Int.MaxValue)
-//            val directDistance = distanceVector.getOrElse(fromNodeId, Int.MaxValue)
-//            val newDistance = distance + directDistance
-//            if (newDistance < distanceVector.getOrElse(targetNodeId, Int.MaxValue)) {
-//              distanceVector = distanceVector.updated(targetNodeId, newDistance)
-//              updated = true
-//              context.log.info("Updated distance vector at node {}: {}", nodeId, distanceVector)
-//            }
-//          }
-//          updated
-//        }
-//
-//        def broadcastDistanceVector(): Unit = {
-//          context.log.info("Broadcasting distance vector from node {}: {}", nodeId, distanceVector)
-//          edges.keys.foreach { neighbor =>
-//            neighbor ! DistanceVector(nodeId, distanceVector)
-//          }
-//          pendingUpdate = false
-//        }
-//
-//        Behaviors.receiveMessage {
-//          case StartRouting() =>
-//            context.log.info("Starting routing at node {}", nodeId)
-//            scheduleBroadcast()
-//            Behaviors.same
-//
-//          case DistanceVector(fromNodeId, distances) =>
-//            context.log.info("Received distance vector from node {}: {}", fromNodeId, distances)
-//            if (updateDistanceVector(fromNodeId, distances)) scheduleBroadcast()
-//            Behaviors.same
-//
-//          case BroadcastDistanceVector =>
-//            broadcastDistanceVector()
-//            Behaviors.same
-//
-//          // Add additional message handling and logging here as needed
-//
-//          case _ =>
-//            context.log.warn("Received an unhandled message at node {}", nodeId)
-//            Behaviors.unhandled
-//        }
-//      }
-//    }
-//}
+package com.distcomp.routing
+
+import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.typed.scaladsl.{ActorContext, Behaviors, LoggerOps}
+import com.distcomp.common.{Message, SimulatorProtocol}
+import com.distcomp.common.Routing._
+
+object Toueg {
+  def apply(simulator: ActorRef[SimulatorProtocol.SimulatorMessage],
+            edges: Map[ActorRef[Message], Int],
+            nodeId: String,
+            numNodes: Int): Behavior[Message] = {
+    Behaviors.setup { context =>
+      context.log.info(s"Toueg Routing Actor for node $nodeId is set up and ready.")
+      active(nodeId, edges, Map.empty[ActorRef[Message], (Option[ActorRef[Message]], Int)], numNodes, 0, Map.empty[Int, ActorRef[Message]], simulator)
+    }
+  }
+
+  private def active(nodeId: String,
+                     edges: Map[ActorRef[Message], Int],
+                     routingTable: Map[ActorRef[Message], (Option[ActorRef[Message]], Int)],
+                     numNodes: Int,
+                     round: Int,
+                     pivotHistory: Map[Int, ActorRef[Message]],
+                     simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] = {
+    Behaviors.receive { (context, message) =>
+      message match {
+        case InitiateRouting =>
+          val initialRoutingTable = edges.map { case (node, dist) =>
+            node -> (None, if (node == context.self) 0 else Int.MaxValue)
+          }
+          context.log.info("Routing table initialized with default values.")
+          active(nodeId, edges, initialRoutingTable, numNodes, round, pivotHistory, simulator)
+
+        case UpdateRound(pivot, newRound) =>
+          val updatedHistory = pivotHistory.updated(newRound, pivot)
+          context.log.info(s"Node $nodeId updates round to $newRound with pivot ${pivot.path.name}.")
+          if (pivot == context.self) {
+            context.log.info(s"Node $nodeId is the pivot for round $newRound.")
+            edges.keys.foreach { node =>
+              node ! RequestDistance(newRound, context.self)
+            }
+          }
+          active(nodeId, edges, routingTable, numNodes, newRound, updatedHistory, simulator)
+
+        case RequestDistance(reqRound, requester) =>
+          context.log.info(s"Node $nodeId received distance request for round $reqRound from ${requester.path.name}.")
+          requester ! DistanceUpdate(routingTable.map { case (node, (_, dist)) => node -> dist }, context.self)
+          Behaviors.same
+
+        case DistanceUpdate(newDistances, from) =>
+          val updatedRoutingTable = routingTable.map { case (node, (parent, dist)) =>
+            val newDist = newDistances.getOrElse(node, Int.MaxValue)
+            if (newDist < dist) {
+              node -> (Some(from), newDist)
+            } else {
+              node -> (parent, dist)
+            }
+          }
+          context.log.info(s"Routing table updated with new distances from ${from.path.name}.")
+          active(nodeId, edges, updatedRoutingTable, numNodes, round, pivotHistory, simulator)
+
+        case _ =>
+          context.log.info("Received an unrecognized message.")
+          Behaviors.same
+      }
+    }
+  }
+}

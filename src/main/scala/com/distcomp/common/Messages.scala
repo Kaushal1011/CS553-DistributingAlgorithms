@@ -1,6 +1,9 @@
 package com.distcomp.common
 
 import akka.actor.typed.ActorRef
+import akka.actor.typed.javadsl.ActorContext
+
+import scala.collection.immutable.Map
 
 sealed trait Message
 
@@ -39,6 +42,7 @@ object SimulatorProtocol {
 
   case class SpanningTreeCompletedSimCall(sender: ActorRef[Message], parent: ActorRef[Message], children: Set[ActorRef[Message]]) extends SimulatorMessage
 
+  case class TerminationDetected(nodeId: String) extends SimulatorMessage
 }
 
 object MutexProtocol{
@@ -52,6 +56,37 @@ object Routing {
   case class StartRouting(initializer: String) extends Message
 
   case class ShortestPathEstimate(distance: Int, sender: ActorRef[Message]) extends Message
+
+  case class Forward(distance: Int , from: ActorRef[Message], round: Int) extends Message
+
+  case class Explore(level: Int, from: ActorRef[Message]) extends Message
+
+  case class Reverse(level: Int, ack: Boolean, from: ActorRef[Message]) extends Message
+
+  sealed trait RoutingMessage extends Message
+  case object InitiateRoutingTable extends RoutingMessage
+  case class SelectPivot(numNodes: Int, S: Set[ActorRef[Message]], replyTo: ActorRef[RoutingMessage]) extends RoutingMessage
+  case class Pivot(randomPivot: ActorRef[Message], replyTo: ActorRef[RoutingMessage]) extends RoutingMessage
+  case class RequestRoutingTable(pivot: ActorRef[Message], replyTo: ActorRef[RoutingMessage]) extends RoutingMessage
+  case class RoutingTable(routingTable: Map[ActorRef[Message], (Option[ActorRef[Message]], Int)]) extends RoutingMessage
+
+  sealed trait TouegMessage extends Message
+  case object InitiateRouting extends TouegMessage
+  case class UpdateRound(pivot: ActorRef[Message], round: Int) extends TouegMessage
+  case class DistanceUpdate(newDistances: Map[ActorRef[Message], Int], from: ActorRef[Message]) extends TouegMessage
+  case class RequestDistance(round: Int, requester: ActorRef[Message]) extends TouegMessage
+
+
+}
+
+object TerminationDetection {
+  sealed trait TerminationMessage extends Message
+  case object Acknowledgment extends TerminationMessage
+  case class Acknowledgment_true(parent: ActorRef[Message]) extends TerminationMessage
+  case class Acknowledgment_false(parent: ActorRef[Message]) extends TerminationMessage
+  case class ParentTerminated(sender: ActorRef[Message]) extends TerminationMessage
+  sealed trait ControlToken extends Message
+  case class Token(allClear: Boolean) extends ControlToken
 }
 
 //object MerlinSegallProtocol{

@@ -4,10 +4,42 @@
       "dotFilePath": "ExampleNetwork.dot",
       "isDirected": false,
       "createRing": false,
-      "createClique": false,
+      "createClique": true,
+      "createBinTree": false,
+      "enableFailureDetector": false,
       "algorithm": "chandy-misra",
       "additionalParameters": {
-        "initiators": 1
+        "initiators": 1,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "merlin-segall",
+      "additionalParameters": {
+        "initiators": 1,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "toueg",
+      "additionalParameters": {
+        "initiators": 1,
+        "additional": 0,
+        "kill": 1
       }
     }
   ]
