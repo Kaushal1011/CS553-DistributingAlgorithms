@@ -35,8 +35,11 @@ Install scala, sbt, and java-17
   - Uses a custom actor for maintianing shared memory (Peterson Tournament Shared Mem Actor)
 - Bakery Algorithm
   - Uses a custom actor for maintianing shared memory (Bakery Shared Mem Actor)
-  - TODO: if node is already requesting, then it should not be able to request again
-  
+- Test and Set Lock Algorithm
+  - Uses a custom actor for maintianing shared memory (Test and Set Shared Mem Actor)
+- Test and Test and Set Lock Algorithm
+  - Uses a custom actor for maintianing shared memory (Test and Test and Set Shared Mem Actor)  
+
 ### [Simulation Plan](./mutexsimplan.json)
 
 1. Ricart Agarwal
@@ -47,9 +50,17 @@ Install scala, sbt, and java-17
 6. Peterson's Algorithm (Tournament for N Processes) 8 Processes
 7. Peterson's Algorithm (Two Process)
 8. Bakery Algorithm
+9. Test and Set Lock Algorithm
+10. Test and Test and Set Lock Algorithm
+
 
 ## Telemetry 
 
 ### [Mutex](./mutexsimplan.json)
 
 ![Mutex Telemetry](./assets/mutexsimplanrun.png)
+
+## Testing 
+
+- Test cases for all algorithms (Integration Testing Based on Log Analysis). Directory [`src/test/scala/com/distcomp/mutex`](src/test/scala/com/distcomp/mutex).
+- Test cases for Shared Memory Actors (Unit Testing checks for correctness of shared memory) Directory [`src/test/scala/com/distcomp/sharedmemory`](src/test/scala/com/distcomp/sharedmemory).
