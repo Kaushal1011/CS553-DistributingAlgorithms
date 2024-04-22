@@ -1,0 +1,18 @@
+{
+  "steps": [
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "bakery",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
+    }
+  ]
+}

@@ -34,6 +34,14 @@ object RicartaAgarwalCarvalhoRoucairol {
             val targets = if (inCriticalSection || lastGranted.isEmpty) nodes else lastGranted
             targets.foreach(_ ! RequestCS(ourTimestamp, context.self))
 
+            if (targets.size == lastGranted.size) {
+              context.log.info("Using Roucairol Carvalho optimization")
+            }
+
+            if (targets.isEmpty) {
+              context.self ! EnterCriticalSection
+            }
+
             active(nodeId, nodes, edges, simulator, mutable.Set.from(targets), true, inCriticalSection, ourTimestamp, lastGranted)
           }
 

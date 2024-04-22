@@ -42,7 +42,7 @@ object TestAndTestAndSetMutex {
 
           if (bool) {
             context.log.info(s"Node ${context.self.path.name} waiting to enter critical section")
-            Thread.sleep(1000) // wait for sometime to read again
+            Thread.sleep(100) // wait for sometime to read again
             sharedMemoryRef ! ReadLockRequest(context.self)
           } else {
             sharedMemoryRef ! SetLockRequest(context.self)
@@ -52,7 +52,7 @@ object TestAndTestAndSetMutex {
         case SetLockResponse(bool) =>
           if (bool) {
             context.log.info(s"Node ${context.self.path.name} waiting to enter critical section (second test result)")
-            Thread.sleep(1000) // wait for sometime to read again
+            Thread.sleep(100) // wait for sometime to read again
             val sharedMemoryRef = sharedMemory.getOrElse(null)
             if (sharedMemoryRef == null) {
               context.log.error("Shared memory reference is null")
@@ -67,7 +67,7 @@ object TestAndTestAndSetMutex {
 
         case EnterCriticalSection =>
           context.log.info(s"${context.self.path.name} entering critical section")
-          Thread.sleep(3000)
+          Thread.sleep(300)
           context.self ! ExitCriticalSection
           Behaviors.same
 

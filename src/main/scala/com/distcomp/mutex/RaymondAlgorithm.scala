@@ -14,7 +14,7 @@ object RaymondAlgorithm {
       case StartCriticalSectionRequest =>
         context.log.info(s"${context.self.path.name} starting critical section request")
         if (hasToken) {
-          context.log.info(s"Node ${context.self.path.name} has the token, entering critical section initated by Simulator")
+          context.log.info(s"Node ${context.self.path.name} has the token, enter critical section initated by Simulator")
           context.self ! EnterCriticalSection
           Behaviors.same
         } else {

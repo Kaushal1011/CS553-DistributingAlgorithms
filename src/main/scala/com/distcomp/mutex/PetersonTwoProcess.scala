@@ -37,7 +37,7 @@ object PetersonTwoProcess {
             // flag of other node is true and turn is of other node
             context.log.info(s"Node ${context.self.path.name} waiting to enter critical section")
             context.log.info(s"Node received flag $flag and turn $turn")
-            Thread.sleep(1000) // wait for sometime to read again
+            Thread.sleep(100) // wait for sometime to read again
             // spin loop
             val sharedMemoryRef = sharedMemory.getOrElse(null)
             if (sharedMemoryRef == null) {
@@ -53,7 +53,7 @@ object PetersonTwoProcess {
 
         case EnterCriticalSection =>
           context.log.info(s"${context.self.path.name} entering critical section")
-          Thread.sleep(3000)
+          Thread.sleep(300)
           context.self ! ExitCriticalSection
           Behaviors.same
 
