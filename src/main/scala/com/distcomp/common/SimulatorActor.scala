@@ -7,6 +7,9 @@ import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
 import com.distcomp.common.ElectionProtocol._
 import com.distcomp.common.FranklinProtocol.SetRandomNodeId
+import com.distcomp.common.TreeElectionProtocol._
+//import com.distcomp.common.TreeProtocol.WakeUpPhase
+import com.distcomp.common.TreeProtocol._
 
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
@@ -152,12 +155,28 @@ object SimulatorActor {
       case "dolev-klawe-rodeh" =>
         context.log.info("Executing Dolev-Klawe-Rodeh Algorithm")
 
-        Thread.sleep(1000)
+        Thread.sleep(2000)
         // randomly take x initiators and send initate message to start election
-        nodes.take(numInitiators).foreach(node => node ! StartElection)
+        nodes.take(numInitiators).foreach(node => node ! wakeUpPhase )
 
         behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
 
+      case "tree-election" =>
+        context.log.info("Executing Tree Election Algorithm")
+
+        // randomly take x initiators and send initate message to start election
+        nodes.take(numInitiators).foreach(node => node ! WakeUpPhase)
+
+        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+
+      case "tree" =>
+        context.log.info("Executing Tree Algorithm")
+        Thread.sleep(1000)
+        // shuffle the nodes
+
+        nodes.foreach(node => node ! Initiate )
+
+        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
       case _ =>
         context.log.info("Algorithm not recognized in Simulator .")
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
@@ -208,9 +227,10 @@ object SimulatorActor {
           behaviorAfterInit(nodes + node, readyNodes, simulationSteps, intialiser, repliesToWait)
 
         case NodeReady(nodeId) =>
+          context.log.info(s"Node $nodeId is ready.")
           val updatedReadyNodes = readyNodes + nodeId
-//          context.log.info(s"Ready nodes: ${updatedReadyNodes.size}")
-//          context.log.info(s"Total nodes: ${nodes.size}")
+          context.log.info(s"Ready nodes: ${updatedReadyNodes.size}")
+          context.log.info(s"Total nodes: ${nodes.size}")
 
           if (updatedReadyNodes.size == nodes.size) {
             context.log.info("All nodes are ready. Simulation can start.")

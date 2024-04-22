@@ -36,16 +36,15 @@ object DolevKlaweRodeh {
         case ElectionMessageDKRP(candidateId, roundMsg, msgStat, from) =>
 //          context.log.info(s"$candidateId sent Election message to $nextNode and parity $msgStat")
           if(msgStat == 0){
-//            context.log.info(s"$nodeId received Election message from $from")
+            context.log.info(s"$nodeId received Election message from $from with msgStat 0")
 //            context.log.info(s"$nodeId received Election message from $from and candidateId is $candidateId and pValue is $pValue and round is $round and msgStat is $msgStat")
             nextNode ! ElectionMessageDKRP(candidateId, roundMsg , 1, context.self)
 //            context.log.info(s"$nodeId sent Election message to $nextNode and parity 1 and round $round")
             active(nodeId, nextNode, candidateId, round, simulator)
           }
           else if(msgStat == 1){
-//            context.log.info(s"$nodeId received Election message from $from")
+            context.log.info(s"$nodeId received Election message from $from with msgStat 1")
 //            context.log.info(s"$nodeId received Election message from $from and candidateId is $candidateId and pValue is $pValue and round is $round and msgStat is $msgStat")
-            //candidateId, nodeId, pValue
 //            context.log.info(s"${nextNode.path.name} is next node name and $candidateId is Candidate name and $nodeId is node name and $pValue is pValue and $round is round and $msgStat is msgStat")
             val maxId = Math.max(extractId(nodeId), extractId(candidateId))
             if (maxId < extractId(pValue)) {
@@ -56,15 +55,16 @@ object DolevKlaweRodeh {
             }
             else if (maxId > extractId(pValue)) {
               //become passive
-              context.log.info(s"Node $nodeId is passive")
+              context.log.info(s"Node $nodeId goes passive coz pvalue is smaller than maxId")
 //              context.log.info(s"$nodeId became passive coz $maxId is maxId and $candidateId is candidateId")
               passive(context.self.path.name, nextNode, 0, simulator)
             }
             else {
               //declare victory
-              context.log.info((s"Winner Case?? $nodeId and ${candidateId} and pvalue is $pValue and msgStat $msgStat and round $round"))
+//              context.log.info((s"Winner Case?? $nodeId and ${candidateId} and pvalue is $pValue and msgStat $msgStat and round $round"))
               nextNode ! VictoryMessage(nodeId)
-//              simulator ! AlgorithmDone
+              context.log.info(s"$nodeId declared victory. I am the leader")
+              simulator ! AlgorithmDone
               passive(context.self.path.name, nextNode, 0, simulator)
             }
           }
@@ -81,7 +81,7 @@ object DolevKlaweRodeh {
         case VictoryMessage(leaderId) =>
           context.log.info(s"$nodeId received victory message")
 //          simulator ! VictoryMessage(leaderId)
-//          simulator ! AlgorithmDone
+          simulator ! AlgorithmDone
           Behaviors.same
       }
     }
@@ -99,15 +99,15 @@ object DolevKlaweRodeh {
           nextNode ! ElectionMessageDKRP(candidateId, msgStat,round, context.self)
           Behaviors.same
 
-        case Winner =>
-          context.log.info(s"$nodeId is the winner ${context.self.path.name}")
-//          simulator ! AlgorithmDone
-          Behaviors.same
+//        case Winner =>
+//          context.log.info(s"$nodeId is the winner ${context.self.path.name}")
+////          simulator ! AlgorithmDone
+//          Behaviors.same
 
         case VictoryMessage(leaderId) =>
           context.log.info(s"$nodeId received victory message")
           //          simulator ! VictoryMessage(leaderId)
-//          simulator ! AlgorithmDone
+          simulator ! AlgorithmDone
           Behaviors.same
         case _ =>
           // other unhandled messages

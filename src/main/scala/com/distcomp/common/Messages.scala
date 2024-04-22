@@ -1,6 +1,7 @@
 package com.distcomp.common
 
 import akka.actor.typed.ActorRef
+import com.distcomp.common.TreeProtocol.MakeParent
 
 sealed trait Message
 
@@ -81,7 +82,7 @@ object AgrawalElAbbadiProtocol{
 object ElectionProtocol{
   case object StartElection extends Message
   case object StartNextRound extends Message
-
+  case object wakeUpPhase extends Message
   case object Winner extends Message
   case class VictoryMessage(leaderId: String) extends Message
 }
@@ -108,5 +109,18 @@ object DolevKlaweRodehProtocol{
 }
 
 object TreeElectionProtocol{
-  case class ElectionMessageTE(candidateId: String, round: Int, from: ActorRef[Message]) extends Message
+  case class ElectionMessageTE(candidateId: String, from: ActorRef[Message]) extends Message
+  case class WakeUpPhaseMessage(fromNodeId: String, node: ActorRef[Message]) extends Message
+//  case object Initiate extends Message
+//  case class wakeUpPhaseMessage(candidateId: String, from: ActorRef[Message]) extends Message
+case object WakeUpPhase extends Message
+  case class MakeParent(nodeId:String, from: ActorRef[Message], maxChild: String, maxChildRef: ActorRef[Message]) extends Message
+  case class Decide(nodeId:String, from: ActorRef[Message], maxChild: String, maxChildRef:ActorRef[Message]) extends Message
+}
+
+object TreeProtocol {
+  case class MakeParent(nodeId:String, from: ActorRef[Message]) extends Message
+  case class Decide(nodeId:String, from: ActorRef[Message]) extends Message
+  case object Initiate extends Message
+
 }
