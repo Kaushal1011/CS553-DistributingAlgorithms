@@ -145,3 +145,28 @@ object DolevKlaweRodehProtocol{
 object TreeElectionProtocol{
   case class ElectionMessageTE(candidateId: String, round: Int, from: ActorRef[Message]) extends Message
 }
+trait WaitForMessage extends Message {
+  val from: ActorRef[Message]
+}
+
+final case class Notify(override val from: ActorRef[Message]) extends WaitForMessage
+
+final case class Grant(override val from: ActorRef[Message]) extends WaitForMessage
+
+final case class Acknowledgment(override val from: ActorRef[Message]) extends WaitForMessage
+
+final case class Done(override val from: ActorRef[Message]) extends WaitForMessage
+
+final case class StartDetection() extends Message
+
+trait BasicMessage extends Message {
+  val id: Int
+  val from: ActorRef[Message]
+  val messageTimeStamp: Int
+  val snapshotTaken: Boolean
+}
+
+final case class SimpleMessage(override val id: Int,
+                               override val from: ActorRef[Message],
+                               override val messageTimeStamp: Int,
+                               override val snapshotTaken: Boolean) extends BasicMessage
