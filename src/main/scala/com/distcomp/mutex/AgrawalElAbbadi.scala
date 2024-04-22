@@ -131,14 +131,14 @@ object AgrawalElAbbadi {
         case RequestDenied(nodeId)=>
 //          wait for sometime and request permission again from head of quorum queue
           context.log.info(s"Node $nodeId has been denied permission")
-          Thread.sleep(1000)
+          Thread.sleep(100)
           quorumQueue.head ! PermissionRequest(context.self)
           Behaviors.same
 
         case EnterCriticalSection=>
 //          simulate critical section entry wait for sometime
           context.log.info(s"$nodeId entering critical section")
-          Thread.sleep(1000)
+          Thread.sleep(100)
           context.self ! ExitCriticalSection
           Behaviors.same
 

@@ -1,0 +1,16 @@
+{
+  "steps": [
+    {
+      "dotFilePath": "Peterson2.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "peterson-two-process",
+      "additionalParameters": {
+        "kill": 1
+      }
+    }
+  ]
+}

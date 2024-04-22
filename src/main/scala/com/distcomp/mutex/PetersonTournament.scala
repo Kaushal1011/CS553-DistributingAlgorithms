@@ -96,7 +96,7 @@ object PetersonTournament {
               context.log.error("Shared memory reference is null")
               Behaviors.same
             }else{
-            Thread.sleep(1000)
+            Thread.sleep(300)
             sharedMemoryRef ! ReadFlagAndTurnTournament(context.self, nodeToCheck, 1-ownBitToCheck)
             Behaviors.same
             }
@@ -140,7 +140,7 @@ object PetersonTournament {
 
         case EnterCriticalSection =>
           context.log.info(s"${context.self.path.name} entering critical section")
-          Thread.sleep(1000)
+          Thread.sleep(300)
           context.self ! ExitCriticalSection
           Behaviors.same
 

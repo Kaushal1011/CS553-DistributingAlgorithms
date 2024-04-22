@@ -11,8 +11,8 @@ import play.api.libs.json.{JsValue, Json}
 import java.io.PrintWriter
 import scala.concurrent.{Await, TimeoutException}
 import scala.io.{BufferedSource, Source}
-
 import com.distcomp.utils.LoggingTestUtils._
+import com.distcomp.utils.SimSetup
 
 
 class RicartAgarwalTest extends AnyWordSpecLike {
@@ -22,34 +22,9 @@ class RicartAgarwalTest extends AnyWordSpecLike {
   val clearTests: Unit =  new PrintWriter("test-logs.txt").close()
   val mutexTestFile: String = getClass.getResource("/mutex/RicartAgarwalPlan.json").getPath
 
-
-  val source: BufferedSource = Source.fromFile(mutexTestFile)
-  val jsonStr: String = try source.mkString finally source.close()
-  val json: JsValue = Json.parse(jsonStr)
-  val testSteps: SimulationStep = (json \ "steps").as[List[SimulationStep]].headOption.head
-
-  val initiators: Int = if (testSteps.additionalParameters.isEmpty) {
-    0
-  } else {
-    testSteps.additionalParameters("initiators") + testSteps.additionalParameters.getOrElse("additional", 0)
-  }
+  val initiators: Int = SimSetup.getInitiators(mutexTestFile)
   // We will initialize logs once and use it across different tests
-  lazy val logs: List[String] = {
-    val system: ActorSystem[SimulatorProtocol.SimulatorMessage] = ActorSystem(SimulatorActor(), "DistributedSystemSimulation")
-    val initializer = system.systemActorOf(Intialiser(system.ref), "Initializer")
-    system ! SimulatorProtocol.StartSimulation(mutexTestFile, initializer)
-    try {
-      Await.result(system.whenTerminated, scala.concurrent.duration.Duration("20s"))
-      Source.fromFile("test-logs.txt").getLines().toList
-    } catch {
-      case _: TimeoutException =>
-        system.terminate()
-        fail("The simulation did not finish within the expected time.")
-      case e: Exception =>
-        system.terminate()
-        fail(s"An unexpected exception occurred: ${e.getMessage}")
-    }
-  }
+  lazy val logs: List[String] = SimSetup(mutexTestFile)
 
   def afterAll(): Unit = {
     testKit.shutdownTestKit()
