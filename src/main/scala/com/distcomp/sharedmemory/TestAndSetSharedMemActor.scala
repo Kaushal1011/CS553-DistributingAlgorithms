@@ -25,6 +25,8 @@ object TestAndSetSharedMemActor {
         case ReadLockRequest(from) =>
           from ! ReadLockResponse(context.self, bool)
           Behaviors.same
+        case _ =>
+          Behaviors.same
       }
 
     }
