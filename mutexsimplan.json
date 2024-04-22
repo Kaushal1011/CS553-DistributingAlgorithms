@@ -95,6 +95,47 @@
       "additionalParameters": {
         "kill": 1
       }
+    },
+    {
+      "dotFilePath": "PetersonT.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "bakery",
+      "additionalParameters": {
+        "initiators": 3,
+        "additional": 0,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": true,
+      "createRing": true,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "test-and-set",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
+    },{
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": true,
+      "createRing": true,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "test-and-test-and-set",
+      "additionalParameters": {
+        "initiators": 5,
+        "additional": 0,
+        "kill": 1
+      }
     }
   ]
 }

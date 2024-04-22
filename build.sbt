@@ -31,5 +31,5 @@ libraryDependencies ++= Seq(
   Cinnamon.library.cinnamonPrometheusHttpServer,
 )
 
-resolvers += "Akka library repository".at("https://repo.akka.io/maven")
 
+Test / unmanagedResourceDirectories += (Test / baseDirectory).value / "resources"

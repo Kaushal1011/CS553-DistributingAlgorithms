@@ -1,0 +1,18 @@
+{
+  "steps": [
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": true,
+      "enableFailureDetector": true,
+      "algorithm": "agrawal-elabbadi",
+      "additionalParameters": {
+        "initiators": 7,
+        "additional": 0,
+        "kill": 1
+      }
+    }
+  ]
+}

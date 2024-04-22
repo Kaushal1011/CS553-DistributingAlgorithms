@@ -11,7 +11,6 @@ import com.distcomp.common.MutexProtocol._
 
 object RicartaAgarwalCarvalhoRoucairol {
   def apply(nodeId: String, nodes: Set[ActorRef[Message]], edges: Map[ActorRef[Message], Int], simulator: ActorRef[SimulatorProtocol.SimulatorMessage], timeStamp: Int): Behavior[Message] = {
-    println(s"Node $nodeId starting Ricarta-Agarwal with Carvalho-Roucairol")
     active(nodeId, nodes, edges, simulator, mutable.Set.empty[ActorRef[Message]], false, false, timeStamp, mutable.Set.empty[ActorRef[Message]])
   }
 
@@ -29,44 +28,45 @@ object RicartaAgarwalCarvalhoRoucairol {
         case StartCriticalSectionRequest =>
           if (requestingCS) {
             context.log.info(s"$nodeId already requesting critical section")
-            return Behaviors.same
-          }else {
+            Behaviors.same
+          } else {
             context.log.info(s"$nodeId starting critical section request")
             val targets = if (inCriticalSection || lastGranted.isEmpty) nodes else lastGranted
-            // log is targets is lastGranted
-            if (targets == lastGranted) {
-              context.log.info(s"$nodeId using last granted nodes via Carvalho-Roucairol optimization")
-            }
             targets.foreach(_ ! RequestCS(ourTimestamp, context.self))
-            active(nodeId, nodes, edges, simulator, mutable.Set.empty, true, inCriticalSection, ourTimestamp, lastGranted)
+
+            if (targets.size == lastGranted.size) {
+              context.log.info("Using Roucairol Carvalho optimization")
+            }
+
+            if (targets.isEmpty) {
+              context.self ! EnterCriticalSection
+            }
+
+            active(nodeId, nodes, edges, simulator, mutable.Set.from(targets), true, inCriticalSection, ourTimestamp, lastGranted)
           }
+
         case RequestCS(timestamp, from) =>
           context.log.info(s"$nodeId received request from ${from.path.name}")
-          val currId = extractId(context.self.path.name)
-          val fromId = extractId(from.path.name)
-          if (!requestingCS || (ourTimestamp < timestamp || (ourTimestamp == timestamp && currId < fromId))) {
+          if (!requestingCS || (ourTimestamp < timestamp || (ourTimestamp == timestamp && extractId(context.self.path.name) < extractId(from.path.name)))) {
             from ! ReplyCS(ourTimestamp, context.self)
-            if (!inCriticalSection) {
-              lastGranted += from
-            }
+            lastGranted += from
+            active(nodeId, nodes, edges, simulator, pendingReplies, requestingCS, inCriticalSection, ourTimestamp, lastGranted)
           } else {
             pendingReplies += from
+            active(nodeId, nodes, edges, simulator, pendingReplies, requestingCS, inCriticalSection, ourTimestamp, lastGranted)
           }
-          Behaviors.same
 
         case ReplyCS(_, from) =>
           context.log.info(s"$nodeId received reply from ${from.path.name}")
           pendingReplies -= from
-          context.log.info(s"Pending replies: ${pendingReplies.size} for $nodeId" )
-          if (pendingReplies.isEmpty && requestingCS && !inCriticalSection) {
+          if (pendingReplies.isEmpty && requestingCS) {
             context.self ! EnterCriticalSection
           }
-          Behaviors.same
+          active(nodeId, nodes, edges, simulator, pendingReplies, requestingCS, inCriticalSection, ourTimestamp, lastGranted)
 
         case EnterCriticalSection =>
-          if (pendingReplies.isEmpty && requestingCS) {
+          if (requestingCS && pendingReplies.isEmpty) {
             context.log.info(s"$nodeId entering critical section")
-            // Execute critical section work here
             context.self ! ExitCriticalSection
             active(nodeId, nodes, edges, simulator, pendingReplies, false, true, ourTimestamp, lastGranted)
           } else {
@@ -79,29 +79,23 @@ object RicartaAgarwalCarvalhoRoucairol {
           nodes.foreach(node => node ! ReleaseCS(ourTimestamp, context.self))
           pendingReplies.foreach(replyTo => replyTo ! ReplyCS(ourTimestamp, context.self))
           pendingReplies.clear()
-
           simulator ! SimulatorProtocol.AlgorithmDone
-
           active(nodeId, nodes, edges, simulator, pendingReplies, false, false, ourTimestamp, lastGranted)
 
         case ReleaseCS(_, from) =>
-          if (requestingCS) {
-            pendingReplies -= from
-            if (pendingReplies.isEmpty) {
-              context.self ! EnterCriticalSection
-            }
+          pendingReplies -= from
+          if (pendingReplies.isEmpty && requestingCS) {
+            context.self ! EnterCriticalSection
           }
-          Behaviors.same
-
-        case SwitchToDefaultBehavior =>
-          NodeActor.algorithm(edges, ourTimestamp, simulator)
+          active(nodeId, nodes, edges, simulator, pendingReplies, requestingCS, inCriticalSection, ourTimestamp, lastGranted)
 
         case UpdateClock(receivedTimestamp) =>
           val newTimestamp = math.max(ourTimestamp, receivedTimestamp) + 1
           context.log.info(s"Node $nodeId updated timestamp to $newTimestamp")
-          active(nodeId, nodes, edges, simulator, pendingReplies, requestingCS,inCriticalSection, newTimestamp, lastGranted)
+          active(nodeId, nodes, edges, simulator, pendingReplies, requestingCS, inCriticalSection, newTimestamp, lastGranted)
 
         case _ => Behaviors.same
       }
     }
 }
+

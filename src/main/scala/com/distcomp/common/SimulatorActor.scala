@@ -7,6 +7,8 @@ import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
 import com.distcomp.common.ElectionProtocol._
 import com.distcomp.common.FranklinProtocol.SetRandomNodeId
+import com.distcomp.sharedmemory.{PetersonSharedMemActor, PetersonTournamentSharedMemActor, BakerySharedMemActor, TestAndSetSharedMemActor}
+
 import com.distcomp.common.TreeElectionProtocol._
 //import com.distcomp.common.TreeProtocol.WakeUpPhase
 import com.distcomp.common.TreeProtocol._
@@ -15,7 +17,10 @@ import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
 
 import scala.util.Random
+import com.distcomp.common.PetersonTwoProcess._
 
+import java.time.Instant
+import java.time.InstantSource.system
 
 object SimulatorActor {
   def apply(): Behavior[SimulatorMessage] = behavior(Set.empty, Set.empty, List.empty)
@@ -98,17 +103,117 @@ object SimulatorActor {
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
 
+      case "peterson-two-process" =>
+        // spawn shared memory actor
+        val sharedMemory = context.spawn(PetersonSharedMemActor(nodes), "shared-memory"+ Instant.now.getEpochSecond.toString)
+
+        nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
+
+        Thread.sleep(2000) // wait for shared memory to be ready
+
+        context.log.info("Executing Peterson's two process algorithm.")
+        nodes.take(2).foreach(node => node ! StartCriticalSectionRequest)
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 2)
+
+      case "peterson-tournament" =>
+        context.log.info("Executing Peterson's tournament algorithm.")
+        // get actor by name or spawn new actor
+
+        val sharedMemory = context.spawn(PetersonTournamentSharedMemActor(nodes), "shared-memory-pt" + Instant.now.getEpochSecond.toString )
+
+        nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
+
+        Thread.sleep(2000) // wait for shared memory to be ready
+
+        context.log.info("Executing Peterson's tournament algorithm.")
+
+        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
       case "agrawal-elabbadi" =>
         context.log.info("Executing Agrawal-ElAbbadi algorithm.")
-//        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
-//
-//        Thread.sleep(2000)
-//
-//        if (additional > 0) {
-//          context.log.info("Adding additional initiators.")
-//          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
-//        }
+        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "bakery" =>
+        context.log.info("Executing Bakery algorithm.")
+        // spawn shared memory actor
+        val sharedMemory = context.spawn(BakerySharedMemActor(nodes), "shared-memory-bakery" + Instant.now.getEpochSecond.toString)
+
+        nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
+
+        Thread.sleep(2000) // wait for shared memory to be ready
+
+        context.log.info("Executing Bakery algorithm.")
+        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "test-and-set" =>
+        context.log.info("Executing Test-and-Set algorithm.")
+        // spawn shared memory actor
+        val sharedMemory = context.spawn(TestAndSetSharedMemActor(), "shared-memory-tas" + Instant.now.getEpochSecond.toString)
+
+        nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
+
+        Thread.sleep(2000) // wait for shared memory to be ready
+
+        context.log.info("Executing Test-and-Set algorithm.")
+        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "test-and-test-and-set" =>
+        context.log.info("Executing Test-and-Test-and-Set algorithm.")
+        // spawn shared memory actor
+        val sharedMemory = context.spawn(TestAndSetSharedMemActor(), "shared-memory-ttas" + Instant.now.getEpochSecond.toString)
+
+        nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
+
+        Thread.sleep(2000) // wait for shared memory to be ready
+
+        context.log.info("Executing Test-and-Test-and-Set algorithm.")
+        nodes.take(numInitiators).foreach(node => node ! StartCriticalSectionRequest)
+
+        Thread.sleep(2000)
+
+        if (additional > 0) {
+          context.log.info("Adding additional initiators.")
+          nodes.take(additional).foreach(_ ! StartCriticalSectionRequest)
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
       case "chang-roberts" =>
         context.log.info("Executing Chang-Roberts Algorithm")
 
@@ -227,10 +332,9 @@ object SimulatorActor {
           behaviorAfterInit(nodes + node, readyNodes, simulationSteps, intialiser, repliesToWait)
 
         case NodeReady(nodeId) =>
-          context.log.info(s"Node $nodeId is ready.")
           val updatedReadyNodes = readyNodes + nodeId
-          context.log.info(s"Ready nodes: ${updatedReadyNodes.size}")
-          context.log.info(s"Total nodes: ${nodes.size}")
+//          context.log.info(s"Ready nodes: ${updatedReadyNodes.size}")
+//          context.log.info(s"Total nodes: ${nodes.size}")
 
           if (updatedReadyNodes.size == nodes.size) {
             context.log.info("All nodes are ready. Simulation can start.")
@@ -301,11 +405,14 @@ object SimulatorActor {
 
           if (remainingSteps.isEmpty) {
             context.log.info("Simulation complete.")
-            behavior(nodes, readyNodes, remainingSteps)
+            //            stop the system
+
+            Behaviors.stopped
           }
           else{
             val step = remainingSteps.head
             context.log.info(s"Initialising network for step: $step")
+            Thread.sleep(500)
             intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique,step.createBinTree, step.enableFailureDetector ,context.self)
             behaviorAfterInit(Set.empty, Set.empty, remainingSteps, intialiser, 1)
           }

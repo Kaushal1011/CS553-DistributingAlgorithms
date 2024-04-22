@@ -135,10 +135,11 @@ object Intialiser {
             }
 
           }
+          Thread.sleep(2000)
         }
 
         // Start the simulation after a delay to ensure all SetEdges messages have been processed
-        context.system.scheduler.scheduleOnce(java.time.Duration.ofSeconds(10), () => {
+        context.system.scheduler.scheduleOnce(java.time.Duration.ofSeconds(2), () => {
           nodeMap.values.foreach { node =>
             node ! StartSimulation
           }

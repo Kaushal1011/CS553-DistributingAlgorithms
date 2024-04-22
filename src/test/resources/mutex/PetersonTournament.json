@@ -1,0 +1,18 @@
+{
+  "steps": [
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": true,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "peterson-tournament",
+      "additionalParameters": {
+        "initiators": 12,
+        "additional": 0,
+        "kill": 1
+      }
+    }
+  ]
+}
