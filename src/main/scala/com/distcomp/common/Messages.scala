@@ -195,6 +195,7 @@ object TreeElectionProtocol {
 }
 
 object BrachaMessages {
+
   trait WaitForMessage extends Message {
     val from: ActorRef[Message]
   }
@@ -210,6 +211,10 @@ object BrachaMessages {
   final case class StartDetection() extends Message
 
   final case class EnableBrachaBehaviour(outgoingRequests: mutable.Set[ActorRef[Message]]) extends Message
+
+  final case class getStatus(override val from: ActorRef[Message]) extends WaitForMessage
+
+  final case class NodeStatus(override val from: ActorRef[Message], status: String) extends WaitForMessage
 
   trait BasicMessage extends Message {
     val from: ActorRef[Message]

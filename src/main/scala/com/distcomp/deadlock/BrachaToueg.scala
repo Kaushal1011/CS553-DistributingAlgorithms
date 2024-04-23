@@ -4,7 +4,7 @@ package com.distcomp.deadlock
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.BrachaMessages._
-import com.distcomp.common.Message
+import com.distcomp.common.{BrachaMessages, Message}
 
 import scala.collection.mutable
 
@@ -19,6 +19,17 @@ object BrachaToueg {
     }
   }
 
+  def passive(pId: String): Behavior[Message] = Behaviors.receive {
+    (ctx, message) => {
+
+      message match {
+        case getStatus(from) =>
+          from ! NodeStatus(ctx.self, "passive")
+          Behaviors.same
+      }
+    }
+  }
+
   def active(pId: String, incomingRequests: mutable.Set[ActorRef[Message]] = mutable.Set.empty,
              outgoingRequests: mutable.Set[ActorRef[Message]] = mutable.Set.empty): Behavior[Message] = Behaviors.setup {
 
@@ -27,6 +38,10 @@ object BrachaToueg {
       Behaviors.receiveMessage {
         msg => {
           msg match {
+            case BrachaMessages.getStatus(from) => {
+              from ! BrachaMessages.NodeStatus(context.self, "active")
+              Behaviors.same
+            }
             case EnableBrachaBehaviour(newOutgoingRequests) => active(pId, incomingRequests, newOutgoingRequests)
             case StartDetection() => {
               context.log.info("Starting deadlock detection - {}", pId)
@@ -42,6 +57,8 @@ object BrachaToueg {
               if (outgoingRequests.isEmpty) {
                 Thread.sleep(300)
                 from ! ResourceGrant(context.self, snapshotTaken)
+              } else {
+
               }
 
               Behaviors.same
@@ -51,10 +68,9 @@ object BrachaToueg {
         }
       }
     }
-
   }
 
-  def detection(pId: Int, in: mutable.Set[ActorRef[Message]], out: mutable.Set[ActorRef[Message]], outReq: Int, free: Boolean = false,
+  def detection(pId: String, in: mutable.Set[ActorRef[Message]], out: mutable.Set[ActorRef[Message]], outReq: Int, free: Boolean = false,
                 notified: Boolean = false, remainingAcks: Int = 0, remainingDone: Int = 0,
                 firstNotifier: ActorRef[Message] = null, lastGranter: ActorRef[Message] = null,
                 isInitiator: Boolean = false): Behavior[Message] = Behaviors.setup {
@@ -92,14 +108,11 @@ object BrachaToueg {
 
             case Grant(from) =>
               if (outReq > 0) {
-                // outReq -= 1
                 if (outReq == 1) {
                   context.log.info("{} Ready to Grant!", pId)
-                  // lastGranter = from
-                  //  free = true
                   for (nd <- in) nd ! Grant(context.self)
-                  detection(pId, in, out, outReq - 1, free = true, notified, remainingAcks, remainingDone, firstNotifier, lastGranter = from, isInitiator = isInitiator)
-
+                  detection(pId, in, out, outReq - 1, free = true, notified, remainingAcks, remainingDone,
+                    firstNotifier, lastGranter = from, isInitiator = isInitiator)
                 } else {
                   from ! Acknowledgment(context.self)
                   Behaviors.same
@@ -109,9 +122,8 @@ object BrachaToueg {
                 Behaviors.same
               }
 
-
             case Acknowledgment(_) =>
-              //              remainingAcks -= 1
+              // remainingAcks -= 1
 
               if (remainingAcks == 1) {
                 if (lastGranter != null) {
@@ -125,11 +137,10 @@ object BrachaToueg {
                 }
               }
 
-              detection(pId, in, out, outReq, free, notified, remainingAcks - 1, remainingDone, firstNotifier, lastGranter, isInitiator)
+              detection(pId, in, out, outReq, free, notified, remainingAcks - 1, remainingDone, firstNotifier,
+                lastGranter, isInitiator)
 
             case Done(_) =>
-
-              //              remainingDone -= 1
 
               if (remainingDone == 0) {
                 if (remainingAcks == 0) {
@@ -143,12 +154,14 @@ object BrachaToueg {
                   context.log.info("Value of free: {}", free)
                   if (free) {
                     context.log.info("There's no deadlock!")
+                    active(pId, in, out)
                   } else {
                     context.log.info("There's a deadlock!")
                     Behaviors.stopped
                   }
                 }
               }
+
               detection(pId, in, out, outReq, free, notified, remainingAcks, remainingDone - 1, firstNotifier, lastGranter, isInitiator)
 
             case _ => Behaviors.unhandled
