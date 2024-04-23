@@ -2,6 +2,8 @@ package com.distcomp.common
 
 import akka.actor.typed.ActorRef
 
+import scala.collection.mutable
+
 sealed trait Message
 
 case class SetEdges(edges: Map[ActorRef[Message], Int]) extends Message
@@ -192,31 +194,32 @@ object TreeElectionProtocol {
   case class ElectionMessageTE(candidateId: String, round: Int, from: ActorRef[Message]) extends Message
 }
 
-trait WaitForMessage extends Message {
-  val from: ActorRef[Message]
-}
-
-final case class Notify(override val from: ActorRef[Message]) extends WaitForMessage
-
-final case class Grant(override val from: ActorRef[Message]) extends WaitForMessage
-
-final case class Acknowledgment(override val from: ActorRef[Message]) extends WaitForMessage
-
-final case class Done(override val from: ActorRef[Message]) extends WaitForMessage
-
-final case class StartDetection() extends Message
-
-object DeadlockMessages {
-  trait BasicMessage extends Message {
-    val id: Int
+object BrachaMessages {
+  trait WaitForMessage extends Message {
     val from: ActorRef[Message]
-    val messageTimeStamp: Int
+  }
+
+  final case class Notify(override val from: ActorRef[Message]) extends WaitForMessage
+
+  final case class Grant(override val from: ActorRef[Message]) extends WaitForMessage
+
+  final case class Acknowledgment(override val from: ActorRef[Message]) extends WaitForMessage
+
+  final case class Done(override val from: ActorRef[Message]) extends WaitForMessage
+
+  final case class StartDetection() extends Message
+
+  final case class EnableBrachaBehaviour(outgoingRequests: mutable.Set[ActorRef[Message]]) extends Message
+
+  trait BasicMessage extends Message {
+    val from: ActorRef[Message]
     val snapshotTaken: Boolean
   }
 
-  final case class ResourceRequest(override val id: Int,
-                                 override val from: ActorRef[Message],
-                                 override val messageTimeStamp: Int,
+  final case class ResourceRequest(override val from: ActorRef[Message],
+                                   override val snapshotTaken: Boolean) extends BasicMessage
+
+  final case class ResourceGrant(override val from: ActorRef[Message],
                                  override val snapshotTaken: Boolean) extends BasicMessage
 
 }

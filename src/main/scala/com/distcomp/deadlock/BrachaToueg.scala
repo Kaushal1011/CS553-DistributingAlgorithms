@@ -3,36 +3,46 @@ package com.distcomp.deadlock
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import com.distcomp.common.DeadlockMessages.ResourceRequest
-import com.distcomp.common.{Acknowledgment, Done, Grant, Message, Notify, StartDetection}
+import com.distcomp.common.BrachaMessages._
+import com.distcomp.common.Message
 
-object DeadlockNode {
+import scala.collection.mutable
 
-  def apply(pId: Int): Behavior[Message] = Behaviors.setup {
+object BrachaToueg {
+
+
+  def apply(pId: String): Behavior[Message] = Behaviors.setup {
 
     ctx => {
-
-      val processId = pId
-      var latestSnapshot: NodeSnapshot = null
-      var timeStamp: Int = 0
-      var incomingRequests: Set[ActorRef[Message]] = Set.empty
-      var outgoingRequests: Set[ActorRef[Message]] = Set.empty
-
-      Behaviors.same
+      ctx.log.info("Creating Deadlock node : {}", pId)
+      active(pId)
     }
   }
 
-  def active(pId: Int): Behavior[Message] = Behaviors.setup {
+  def active(pId: String, incomingRequests: mutable.Set[ActorRef[Message]] = mutable.Set.empty,
+             outgoingRequests: mutable.Set[ActorRef[Message]] = mutable.Set.empty): Behavior[Message] = Behaviors.setup {
 
     context => {
 
       Behaviors.receiveMessage {
         msg => {
           msg match {
+            case EnableBrachaBehaviour(newOutgoingRequests) => active(pId, incomingRequests, newOutgoingRequests)
             case StartDetection() => {
-              context.log.info("Starting deadlock detection from {}", pId)
+              context.log.info("Starting deadlock detection - {}", pId)
+
               // TODO: Take a local snapshot and alert all edges to take snapshot as well
               // TODO: start enforcing deadlock detection mode
+
+              Behaviors.same
+            }
+            case ResourceRequest(from, snapshotTaken) => {
+              context.log.info("{} received a request from {}", context.self, from)
+
+              if (outgoingRequests.isEmpty) {
+                Thread.sleep(300)
+                from ! ResourceGrant(context.self, snapshotTaken)
+              }
 
               Behaviors.same
             }
@@ -44,10 +54,10 @@ object DeadlockNode {
 
   }
 
-  def deadlock(pId: Int, in: Set[ActorRef[Message]], out: Set[ActorRef[Message]], outReq: Int, free: Boolean = false,
-               notified: Boolean = false, remainingAcks: Int = 0, remainingDone: Int = 0,
-               firstNotifier: ActorRef[Message] = null, lastGranter: ActorRef[Message] = null,
-               isInitiator: Boolean = false): Behavior[Message] = Behaviors.setup {
+  def detection(pId: Int, in: mutable.Set[ActorRef[Message]], out: mutable.Set[ActorRef[Message]], outReq: Int, free: Boolean = false,
+                notified: Boolean = false, remainingAcks: Int = 0, remainingDone: Int = 0,
+                firstNotifier: ActorRef[Message] = null, lastGranter: ActorRef[Message] = null,
+                isInitiator: Boolean = false): Behavior[Message] = Behaviors.setup {
 
     context => {
 
@@ -73,7 +83,7 @@ object DeadlockNode {
                   }
                 }
 
-                deadlock(pId, in, out, outReq, free = true, notified = true, remainingAcks, remainingDone, from, lastGranter, isInitiator = isInitiator)
+                detection(pId, in, out, outReq, free = true, notified = true, remainingAcks, remainingDone, from, lastGranter, isInitiator = isInitiator)
 
               } else {
                 from ! Done(context.self)
@@ -88,7 +98,7 @@ object DeadlockNode {
                   // lastGranter = from
                   //  free = true
                   for (nd <- in) nd ! Grant(context.self)
-                  deadlock(pId, in, out, outReq - 1, free = true, notified, remainingAcks, remainingDone, firstNotifier, lastGranter = from, isInitiator = isInitiator)
+                  detection(pId, in, out, outReq - 1, free = true, notified, remainingAcks, remainingDone, firstNotifier, lastGranter = from, isInitiator = isInitiator)
 
                 } else {
                   from ! Acknowledgment(context.self)
@@ -115,7 +125,7 @@ object DeadlockNode {
                 }
               }
 
-              deadlock(pId, in, out, outReq, free, notified, remainingAcks - 1, remainingDone, firstNotifier, lastGranter, isInitiator)
+              detection(pId, in, out, outReq, free, notified, remainingAcks - 1, remainingDone, firstNotifier, lastGranter, isInitiator)
 
             case Done(_) =>
 
@@ -135,11 +145,11 @@ object DeadlockNode {
                     context.log.info("There's no deadlock!")
                   } else {
                     context.log.info("There's a deadlock!")
+                    Behaviors.stopped
                   }
                 }
               }
-              deadlock(pId, in, out, outReq, free, notified, remainingAcks, remainingDone - 1, firstNotifier, lastGranter, isInitiator)
-
+              detection(pId, in, out, outReq, free, notified, remainingAcks, remainingDone - 1, firstNotifier, lastGranter, isInitiator)
 
             case _ => Behaviors.unhandled
 
@@ -149,5 +159,3 @@ object DeadlockNode {
     }
   }
 }
-
-final case class NodeSnapshot(id: Int, out: List[Int], in: List[Int])
