@@ -1,13 +1,12 @@
 package com.distcomp.common
 
-import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
+import akka.actor.typed.{ActorRef, Behavior}
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 import com.distcomp.election.ChangRoberts
-import com.distcomp.mutex.RicartaAgarwal
-import com.distcomp.mutex.RicartaAgarwalCarvalhoRoucairol
-import com.distcomp.mutex.NodeActorBinaryTree
-import com.distcomp.routing.{ChandyMisra, Frederickson, MerlinSegall, Toueg}
+import com.distcomp.mutex.{NodeActorBinaryTree, RicartaAgarwal, RicartaAgarwalCarvalhoRoucairol}
+import com.distcomp.routing.{ChandyMisra, Frederickson, Toueg}
+
 
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
@@ -99,7 +98,7 @@ object NodeActor {
 
             case "toueg" =>
               context.log.info("Switching the algorithm to Toueg in nodeActor")
-              Toueg(simulator, edges, context.self.path.name, edges.size)
+              Toueg(context.self, edges, Set.empty, simulator)
 
             case "frederickson" =>
               context.log.info("Switching the algorithm to Frederickson in nodeActor")

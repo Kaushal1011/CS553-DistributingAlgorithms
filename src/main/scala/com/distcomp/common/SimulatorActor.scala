@@ -7,6 +7,7 @@ import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
 import com.distcomp.routing.{ChandyMisra, MerlinSegall}
 import com.distcomp.common.Routing._
+import com.distcomp.common.TouegProtocol._
 
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
@@ -131,9 +132,33 @@ object SimulatorActor {
 //
       case "toueg" =>
         context.log.info("Executing Toueg Algorithm")
-        nodes.take(1).foreach(node => node ! InitiateRouting)
+        Thread.sleep(1000)
 
-        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
+        // write a for loop for nodes.size times
+        val pivots = Set.empty[ActorRef[Message]]
+        nodes.foreach(node => node ! SetAllNodes(nodes))
+        Thread.sleep(4000)
+        nodes.foreach{
+          case node =>
+            // remove pivots from nodes
+            Thread.sleep(4000)
+            val cleanedNodes = nodes -- pivots
+            // randomly select a pivot from cleaned nodes
+            val pivot = cleanedNodes.toSeq(Random.nextInt(cleanedNodes.size))
+
+            //log pivot
+            context.log.info(s"Selected pivot: ${pivot.path.name}")
+            //add pivot to pivots
+            pivots + pivot
+
+            nodes.foreach(node => node ! StartRoutingT(nodes, pivot))
+        }
+
+//
+//        Thread.sleep(1000)
+
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,nodes.size)
 
       case "frederickson" =>
         Thread.sleep(1000)

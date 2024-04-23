@@ -57,27 +57,26 @@ object Routing {
 
   case class ShortestPathEstimate(distance: Int, sender: ActorRef[Message]) extends Message
 
-  case class Forward(distance: Int , from: ActorRef[Message], round: Int) extends Message
+  case class Forward(distance: Int, from: ActorRef[Message], round: Int) extends Message
 
   case class Explore(level: Int, from: ActorRef[Message]) extends Message
 
   case class Reverse(level: Int, ack: Boolean, from: ActorRef[Message]) extends Message
 
-  sealed trait RoutingMessage extends Message
-  case object InitiateRoutingTable extends RoutingMessage
-  case class SelectPivot(numNodes: Int, S: Set[ActorRef[Message]], replyTo: ActorRef[RoutingMessage]) extends RoutingMessage
-  case class Pivot(randomPivot: ActorRef[Message], replyTo: ActorRef[RoutingMessage]) extends RoutingMessage
-  case class RequestRoutingTable(pivot: ActorRef[Message], replyTo: ActorRef[RoutingMessage]) extends RoutingMessage
-  case class RoutingTable(routingTable: Map[ActorRef[Message], (Option[ActorRef[Message]], Int)]) extends RoutingMessage
-
-  sealed trait TouegMessage extends Message
-  case object InitiateRouting extends TouegMessage
-  case class UpdateRound(pivot: ActorRef[Message], round: Int) extends TouegMessage
-  case class DistanceUpdate(newDistances: Map[ActorRef[Message], Int], from: ActorRef[Message]) extends TouegMessage
-  case class RequestDistance(round: Int, requester: ActorRef[Message]) extends TouegMessage
-
-
 }
+
+object TouegProtocol {
+
+  // Message Definitions
+
+  case class  StartRoutingT(allNodes : Set[ActorRef[Message]], pivot: ActorRef[Message]) extends Message
+  case class  Request(allNodes : Set[ActorRef[Message]]) extends Message
+  case class RequestRouting(round: Int, requester: ActorRef[Message]) extends Message
+  case class ProvideRoutingInfo(map: Map[ActorRef[Message],Int], from: ActorRef[Message]) extends Message
+  case object InitiateNextRoundT extends Message
+  case class SetAllNodes(allNodes: Set[ActorRef[Message]]) extends Message
+}
+
 
 object TerminationDetection {
   sealed trait TerminationMessage extends Message
