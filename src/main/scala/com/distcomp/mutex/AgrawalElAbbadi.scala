@@ -111,10 +111,6 @@ object AgrawalElAbbadi {
                 newQuorumQueue.head ! PermissionRequest(context.self)
                 active(context.self.path.name, parent, tree, simulator, failureDetector, timestamp, failedNodes, heartbeatRunner, permissionGivenTo, newQuorumQueue)
 
-              case null :: null :: Nil=>  // No children, empty or "null" children
-                context.self ! EnterCriticalSection
-                active(context.self.path.name, parent, tree, simulator, failureDetector, timestamp, failedNodes, heartbeatRunner, permissionGivenTo, List.empty)
-
               case null =>  // Should not occur, but safe
                 context.self ! EnterCriticalSection
                 active(context.self.path.name, parent, tree, simulator, failureDetector, timestamp, failedNodes, heartbeatRunner, permissionGivenTo, List.empty)
