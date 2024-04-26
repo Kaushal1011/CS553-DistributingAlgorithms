@@ -5,6 +5,7 @@ import com.distcomp.common.{SimulatorActor, Intialiser, SimulatorProtocol}
 import scala.io.Source
 
 object Main extends App {
+
   if (args.length < 1) {
     println("Please provide the simulation plan file name located in the resources folder.")
     System.exit(1)
