@@ -88,7 +88,7 @@ object Toueg {
 //        if (round <= roundp) {
 //          val distancesToSend = allnodes.filter(r => distp(r) < (Int.MaxValue / 3).toInt).map(r => r -> distp(r)).toMap
         if (round <= roundp) {
-          val distancesToSend = distancesp(roundp)
+          val distancesToSend = distancesp(roundp).filter(r => distp(r._1) < (Int.MaxValue / 3).toInt)
           requester ! ProvideRoutingInfo(distancesToSend, context.self)
           context.log.info(s"REQUEST ROUTING GRANTED: Routing info for round $round provided to ${requester.path.name} from ${node.path.name} || ${distancesToSend}")
           active(node, allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp, counter, numNodes, context, simulator)
@@ -103,14 +103,15 @@ object Toueg {
         var updatedParentp = parentp
         var updatedDistance = receivedDistances
         allnodes.foreach(s => {
-          if (updatedDistance.contains(s)) {
+          if (updatedDistance.contains(s) && s != pivots(roundp) ) {
             if (updatedDistance(s) + updatedDistp(pivots(roundp)) < updatedDistp(s)) {
-              context.log.info(s"UPDATE LOG: Update for node ${s.path.name} from ${from.path.name} with new dist: ${updatedDistance(s) + updatedDistp(pivots(roundp))} || Prev Dist: ${updatedDistp(s)}.")
+              context.log.info(s"UPDATE LOG: Update for node ${s.path.name} from ${node.path.name} with new dist: ${updatedDistance(s) + updatedDistp(pivots(roundp))} || Prev Dist: ${updatedDistp(s)}.")
               updatedDistp = updatedDistp.updated(s, updatedDistance(s) + updatedDistp(pivots(roundp)))
               updatedParentp = updatedParentp.updated(s, Some(from))
+              updatedDistance = updatedDistance.updated(s, updatedDistance(s) + updatedDistp(pivots(roundp)))
             }
             else {
-              context.log.info(s"LOG: No update for node ${s.path.name} from ${from.path.name}. ${updatedDistance(s) + updatedDistp(pivots(roundp))} >= ${updatedDistp(s)}")
+              context.log.info(s"LOG: No update for node ${s.path.name} from ${node.path.name}. ${updatedDistance(s) + updatedDistp(pivots(roundp))} >= ${updatedDistp(s)}")
               context.log.info(s"REMOVED $s: Removed s from ${updatedDistance}")
               updatedDistance = updatedDistance - s
             }
@@ -120,8 +121,9 @@ object Toueg {
         context.log.info(s"FORWARD LOG: Forwarding $updatedDistance to ${forwardp(roundp)} || ${updatedDistp} || ${distancesp(roundp)}")
         forwardp(roundp).foreach { r => r ! ProvideRoutingInfo(updatedDistance, context.self) }
         // update the specific distances in roundp in distancesp that are in distance
-        val updatedpivotdist = distancesp(roundp).map { case (k, v) => if (updatedDistance.contains(k)) {k -> updatedDistance(k)} else {k -> v}}
-        val updatedDistancesp = distancesp.updated(roundp,  updatedpivotdist)
+//        val updatedpivotdist = distancesp(roundp).map { case (k, v) => if (updatedDistance.contains(k)) {k -> updatedDistance(k)} else {k -> v}}
+        val updatedDistancesp = distancesp.updated(roundp,  updatedDistp)
+        active(node, allnodes, edges, updatedDistp, updatedParentp, forwardp, updatedDistancesp, S, pivots, roundp, counter, numNodes, context, simulator)
         context.self ! InitiateNextRoundT
         active(node, allnodes, edges, updatedDistp, updatedParentp, forwardp, updatedDistancesp, S, pivots, roundp, counter, numNodes, context, simulator)
 
@@ -134,7 +136,9 @@ object Toueg {
         else {
           Thread.sleep(200)
           val updatedRoundp = roundp + 1
-          val updatedDistancesp = distancesp.updated(updatedRoundp, distp)
+          val updatedDistancesp = distancesp.updated(updatedRoundp, distancesp(roundp))
+//          var updatedForwardp = forwardp
+//          updatedForwardp(roundp).foreach(r => updatedForwardp.updated(updatedRoundp, updatedForwardp(updatedRoundp) + r))
           context.log.info(s"NEXT ROUND LOG: Moving ${node.path.name} to Round $updatedRoundp.")
           node ! StartRoutingT(allnodes, pivots)
           active(node, allnodes, edges, distp, parentp, forwardp, updatedDistancesp, S, pivots, updatedRoundp, counter, numNodes, context, simulator)

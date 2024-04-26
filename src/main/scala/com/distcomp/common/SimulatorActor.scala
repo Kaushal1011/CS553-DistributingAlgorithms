@@ -134,12 +134,14 @@ object SimulatorActor {
         context.log.info("Executing Toueg Algorithm")
         Thread.sleep(1000)
 
-        nodes.foreach(node => node ! SetAllNodes(nodes))
-        Thread.sleep(4000)
-
         // make a map of shuffled nodes with int from 0 to n-1
         val shuffledNodes = Random.shuffle(nodes)
         val pivots = shuffledNodes.zipWithIndex.map { case (node, index) => index -> node }.toMap
+
+        nodes.foreach(node => node ! SetAllNodes(nodes))
+          Thread.sleep(1000)
+
+
 
         nodes.foreach(node => node ! StartRoutingT(nodes, pivots))
 
@@ -147,7 +149,7 @@ object SimulatorActor {
 //        Thread.sleep(1000)
 
 
-        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,nodes.size*2)
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,nodes.size)
 
       case "frederickson" =>
         Thread.sleep(1000)

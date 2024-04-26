@@ -1,14 +1,13 @@
 {
   "steps": [
-
     {
-      "dotFilePath": "toueg.dot",
+      "dotFilePath": "ExampleNetwork.dot",
       "isDirected": false,
       "createRing": false,
       "createClique": false,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "toueg",
+      "algorithm": "frederickson",
       "additionalParameters": {
         "l": 3,
         "totalNodes": 26,
