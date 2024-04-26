@@ -41,102 +41,62 @@ object Toueg {
     Behaviors.receiveMessage {
       case SetAllNodes(allnodesnew)=>
         context.log.info(s"Set all nodes received by initializer ${context.self.path.name}.")
-        // set all nodes in distanceesp to inf except self and edges for allnode.size -1 rounds
-        val updatedDistancesp = (0 until allnodesnew.size).map { i =>
-            i -> Map.empty[ActorRef[Message], Int]
-        }.toMap
-        // log edges and weight
-//        context.log.info(s"Edges and weights for node ${node.path.name} are $edges.")
-        val updatedDistp = allnodesnew.map { q =>
-          if (q == context.self) {
-            q -> 0
-          } else if (edges.contains(q)) {
-//            context.log.info(s"Setting distance for node ${q.path.name} to ${edges(q)}")
-            q -> edges(q)
-          }
-          else {
-            q -> Int.MaxValue
-          }
-        }.toMap
+        val updatedDistancesp = (0 until allnodesnew.size).map { i => i -> Map.empty[ActorRef[Message], Int]}.toMap
 
-        // log updatedDistp of edges
-        context.log.info(s"Updated distance for node ${node.path.name} is $updatedDistp.")
+        val updatedDistp = allnodesnew.map { q => if (q == context.self) {q -> 0} else if (edges.contains(q)) {q -> edges(q)} else {q -> Int.MaxValue}}.toMap
 
-        val updatedParentp = allnodesnew.map { node =>
-          if (edges.contains(node)) {
-            node -> Some(node)
-          }
-          else {
-            node -> None
-          }
-        }.toMap
+        val UpdatedDistancesp_1 = updatedDistancesp.updated(0, updatedDistp)
 
-        active(node, allnodesnew, edges, updatedDistp, updatedParentp, forwardp, updatedDistancesp, S, pivots, roundp, counter, numNodes, context, simulator)
+        val updatedParentp = allnodesnew.map { q => if (edges.contains(q)) {q -> Some(q)} else {q -> None}}.toMap
 
-      case StartRoutingT(allnodes, pivot) => // add all nodes
-        context.log.info(s"Routing started by initializer ${context.self.path.name}.")
-        // set pivot as init
-        val updatedPivots = pivots.updated(roundp, pivot)
+        active(node, allnodesnew, edges, updatedDistp, updatedParentp, forwardp, UpdatedDistancesp_1, S, pivots, 0, counter, numNodes, context, simulator)
 
-        // log updated pivot and roundp for each node
-        context.log.info(s"Round $roundp pivot is ${pivot.path.name} for node ${node.path.name}.")
-        if (node == updatedPivots(roundp) ){
-          context.log.info(s"Node ${node.path.name} is the pivot for round $roundp. || $forwardp")
-          // send to all ref in forwardp
+      case StartRoutingT(allnodes, pivots) =>
+        context.log.info(s"Round $roundp for node ${node.path.name}.")
+        if (node == pivots(roundp)){
+          context.log.info(s"${node.path.name} == pivot for round $roundp. || ${forwardp(roundp)}")
           forwardp(roundp).foreach { q =>
-            val distancesToSend = allnodes.filter(r => distp(r) < Int.MaxValue).map(r => r -> distp(r)).toMap
-            context.log.info(s"Sending distances to ${q.path.name} for round $roundp. || $distancesToSend")
-            q ! ProvideRoutingInfo(distancesToSend, context.self)
+            q ! ProvideRoutingInfo(allnodes.filter(r => distp(r) < Int.MaxValue).map(r => r -> distp(r)).toMap, context.self)
           }
-          // Perform NextRound
-          context.self ! InitiateNextRoundT //check 1
-          active(node, allnodes, edges, distp, parentp, forwardp, distancesp, S, updatedPivots, roundp, counter, allnodes.size, context, simulator)
+          context.self ! InitiateNextRoundT
+          active(node, allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp, counter, allnodes.size, context, simulator)
         }
-        // check parentp[pivots[round]] != none
-        else if (parentp(updatedPivots(roundp)).isDefined) {
-          context.log.info(s"Parent of pivot for round $roundp is present for node ${node.path.name}.")
-          // send request to parent of pivot
-          parentp(updatedPivots(roundp)).get ! RequestRouting(roundp, node)
-          active(node, allnodes, edges, distp, parentp, forwardp, distancesp, S, updatedPivots, roundp, counter, allnodes.size, context, simulator)
+        else if (parentp(pivots(roundp)).isDefined) {
+          context.log.info(s"Parent ${parentp(pivots(roundp)).get.path.name} of pivot: ${pivots(roundp).path.name} for round $roundp is present for ${node.path.name}.")
+          parentp(pivots(roundp)).get ! RequestRouting(roundp, node)
+          active(node, allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp, counter, allnodes.size, context, simulator)
         }
         else {
-          //next round
           context.self ! InitiateNextRoundT
-          active(node, allnodes, edges, distp, parentp, forwardp, distancesp, S, updatedPivots, roundp, counter, numNodes, context, simulator)
+          active(node, allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp, counter, numNodes, context, simulator)
         }
 
 
       case RequestRouting(round, requester) =>
         if (round < roundp) {
           requester ! ProvideRoutingInfo(distancesp(round), context.self)
-          context.log.info(s"Routing info for round $round provided to ${requester.path.name}")
-          active(node,allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp+1, counter, numNodes, context, simulator)
+          context.log.info(s"Routing info for round $round provided to ${requester.path.name} from ${node.path.name} || ${distancesp(round)}")
+          active(node,allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp, counter, numNodes, context, simulator)
         } else {
           val updatedForwardp = forwardp.updated(round, forwardp(round) + requester)
-          context.log.info(s"Request from ${requester.path.name} added to forward list for round $round || ${updatedForwardp(round)} || $updatedForwardp ")
+          context.log.info(s"Request from ${requester.path.name} added to forward list node ${node.path.name} for round $round || ${updatedForwardp(round)} || $updatedForwardp ")
           active(node,allnodes, edges, distp, parentp, updatedForwardp, distancesp, S, pivots, roundp, counter, numNodes, context, simulator)
         }
 
       case ProvideRoutingInfo(receivedDistances, from) =>
-        //log
-        context.log.info(s"Routing info received from ${from.path.name} for round $roundp.")
+        context.log.info(s"Routing info received from ${from.path.name} to ${node.path.name} for round $roundp.")
         var  updateDistances = receivedDistances
         var updatedParentp = parentp
         var updatedDistp = distp
-        // for all distance keys
+        var updatedDistancesp = distancesp
         allnodes.foreach { q =>
-          // check if receivedDistances has distance key
-          // log q
-          context.log.info(s"Checking distance for node ${q.path.name} in round $roundp. || receivedDistances: $receivedDistances || ${receivedDistances.contains(q)}")
-          if (receivedDistances.contains(q)) {
+          if (receivedDistances.contains(q) ) {
+            context.log.info(s"Distance for node ${q.path.name} to pivot is ${distp(pivots(roundp))}.")
             val newDist = receivedDistances(q) + distp(pivots(roundp))
-            context.log.info(s"New distance for node ${q.path.name} is $newDist, Orig ${distp(q)}.")
               if (newDist < distp(q)) {
-                //log
-                context.log.info(s"Updating distance for node ${q.path.name} from ${from.path.name} to $newDist. | ${distp(q)}")
-                // update distp, parentp of ref
+                context.log.info(s"Updating distance for node ${q.path.name} from ${context.self.path.name} to $newDist. with pivot ${pivots(roundp).path.name} and round ${roundp}| ${distp(q)}")
                 updatedDistp = distp.updated(q, newDist)
-                updatedParentp = parentp.updated(q, parentp(pivots(roundp)))
+                updatedParentp = parentp.updated(q, Some(pivots(roundp)))
               }
               else {
                 context.log.info(s"Removing distance for node ${q.path.name} from round $roundp.")
@@ -144,35 +104,29 @@ object Toueg {
               }
           }
         }
-
-        // send distances to all ref in forwardp
-        //log forwardp values
-        context.log.info(s"Forwarding ${context.self.path.name} distances to all nodes in round $roundp. || ${forwardp(roundp-1)} || $updateDistances")
+        context.log.info(s"Forwarding ${context.self.path.name} distances to all nodes in round $roundp. || ${forwardp(roundp)} || $updateDistances")
         forwardp(roundp).foreach(r => r ! ProvideRoutingInfo(updateDistances, context.self))
-        // add distances to distancesp for round k
-        val updatedDistancesp = distancesp.updated(roundp, updateDistances)
-        // Perform NextRound
+        updatedDistancesp = distancesp.updated(roundp, updateDistances)
+        context.log.info(s"Updated distances for round $roundp. || $updatedDistancesp")
         context.self ! InitiateNextRoundT
         active(node,allnodes, edges, updatedDistp, updatedParentp, forwardp, updatedDistancesp, S, pivots, roundp, counter, numNodes, context, simulator)
 
       case InitiateNextRoundT =>
-        if (counter < numNodes) {
-          val updatedCounter = counter + 1
-          context.log.info(s"Initiating round $updatedCounter for node ${node.path.name}.")
-          // send message to for next round
-          context.self ! StartRoutingT(allnodes, pivots(roundp))
-          active(node,allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp, updatedCounter, numNodes, context, simulator)
-        } else
-          {
-            // print distances
-            context.log.info(s"Distances for node ${node.path.name} are ${distp.values}.")
-            context.log.info(s"Round $roundp for ${node.path.name} completed, terminating.")
-            simulator ! SimulatorProtocol.AlgorithmDone
-            active(node,allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp+1, counter, numNodes, context, simulator)
-          }
+      if (roundp >= allnodes.size-1)
+      {
+        context.log.info(s"Distances for node ${node.path.name} are ${distp}.")
+        context.log.info(s"Round $roundp for ${node.path.name} completed, terminating.")
+        simulator ! SimulatorProtocol.AlgorithmDone
+        active(node,allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp, counter, numNodes, context, simulator)
+      }
+      else{
+          context.self ! StartRoutingT(allnodes, pivots)
+          active(node,allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp+1, counter, numNodes, context, simulator)
+        }
 
       case _ =>
-          active(node,allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp, counter, numNodes, context, simulator)
+        context.log.info(s"Unhandled message received by ${context.self.path.name}.")
+        active(node, allnodes, edges, distp, parentp, forwardp, distancesp, S, pivots, roundp, counter, numNodes, context, simulator)
 
         }
     }
