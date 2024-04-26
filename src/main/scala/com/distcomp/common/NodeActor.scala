@@ -3,12 +3,16 @@ package com.distcomp.common
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
+import com.distcomp.deadlock.BrachaToueg
 import com.distcomp.election.ChangRoberts
 import com.distcomp.election.Franklin
 import com.distcomp.election.DolevKlaweRodeh
-import com.distcomp.election.TreeElection
 import com.distcomp.election.EchoElection
-import com.distcomp.mutex.{RicartaAgarwal,RicartaAgarwalCarvalhoRoucairol,NodeActorBinaryTree,PetersonTwoProcess,PetersonTournament,BakeryAlgorithm, TestAndSetMutex, TestAndTestAndSetMutex}
+
+import com.distcomp.election.TreeElection
+import com.distcomp.election.Tree
+import com.distcomp.mutex.{BakeryAlgorithm, NodeActorBinaryTree, PetersonTournament, PetersonTwoProcess, RicartaAgarwal, RicartaAgarwalCarvalhoRoucairol, TestAndSetMutex, TestAndTestAndSetMutex}
+
 
 object NodeActor {
   // NodeActor now needs to know about the SimulatorActor to notify it when ready
@@ -16,7 +20,7 @@ object NodeActor {
     // Initially, register this node with the SimulatorActor
     simulator ! RegisterNode(context.self, context.self.path.name)
 
-    active(Map.empty, Set.empty, 0, simulator,failureDetector)
+    active(Map.empty, Set.empty, 0, simulator, failureDetector)
   }
 
   // Active behavior now includes the SimulatorActor for notification
@@ -42,7 +46,7 @@ object NodeActor {
           }
 
         case SetBinaryTreeEdges(parent, tree) =>
-          NodeActorBinaryTree(context.self.path.name, parent, tree, simulator,failureDetector,timestamp )
+          NodeActorBinaryTree(context.self.path.name, parent, tree, simulator, failureDetector, timestamp)
 
         case StartSimulation =>
           val newTimestamp = timestamp + 1
@@ -78,15 +82,15 @@ object NodeActor {
               context.log.info("Switching to Ricart-Agarwala Carvalho-Roucairol algorithm")
               RicartaAgarwalCarvalhoRoucairol(context.self.path.name, edges.keySet, edges, simulator, timestamp)
             case "raymonds-algo" =>
-             context.log.info("Switching to Spanning Tree Behavior, needs tree building")
-             SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+              context.log.info("Switching to Spanning Tree Behavior, needs tree building")
+              SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
             case "peterson-two-process" =>
               context.log.info("Switching to Peterson's Two Process Algorithm")
               val node2 = edges.keys.head
               PetersonTwoProcess(node2, None, simulator)
             case "peterson-tournament" =>
               context.log.info("Switching to Peterson's Tournament Algorithm")
-              PetersonTournament(edges.keySet, None ,simulator)
+              PetersonTournament(edges.keySet, None, simulator)
             case "bakery" =>
               context.log.info("Switching to Bakery Algorithm")
               BakeryAlgorithm(edges.keySet, None, simulator)
@@ -98,20 +102,25 @@ object NodeActor {
               TestAndTestAndSetMutex(None, simulator)
             case "chang-roberts" =>
               context.log.info("Switching to ChangRoberts Election Algorithm")
-              ChangRoberts(context.self.path.name,  edges.keySet, edges, simulator)
+              ChangRoberts(context.self.path.name, edges.keySet, edges, simulator)
             case "franklin" =>
               context.log.info("Switching to Franklin Election Algorithm")
-              Franklin(context.self.path.name,  edges.keySet, edges, simulator)
+              Franklin(context.self.path.name, edges.keySet, edges, simulator)
             case "dolev-klawe-rodeh" =>
               context.log.info("Switiching to Dolev-Klawe Rodeh Algorithm")
               DolevKlaweRodeh(context.self.path.name,edges.keySet,edges, simulator)
-//            case "tree-election" =>
-//              context.log.info(s"Switching to Tree Election Algorithm")
-//              TreeElection()
+            case "tree-election" =>
+              context.log.info(s"Switching to Tree Election Algorithm")
+              TreeElection(context.self.path.name, edges.keySet, edges, simulator)
+            case "tree" =>
+              context.log.info(s"Switching to Tree Algorithm")
+              Tree(context.self.path.name, edges.keySet, edges, simulator)
             case "echo-election" =>
               context.log.info(s"Switching to Echo Election Algorithm")
               EchoElection(context.self.path.name, edges.keySet, edges, simulator, timestamp)
-
+            case "bracha-toueg" =>
+              context.log.info("Switching to Bracha Toueg Algorithm")
+              BrachaToueg(context.self.path.name)
             case _ =>
               context.log.info("Algorithm not recognized in nodeActor")
               Behaviors.unhandled
