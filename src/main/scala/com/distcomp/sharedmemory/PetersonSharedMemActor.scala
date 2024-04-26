@@ -18,11 +18,14 @@ object PetersonSharedMemActor {
     Behaviors.receive { (context, message) =>
       message match {
         case SetFlag(node, flag) =>
+          // set flag for a node
           val updatedFlag = flagMap.updated(node, flag)
           active(turn, updatedFlag)
         case SetTurn(newTurn) =>
+          // set turn for a node
           active(Some(newTurn), flagMap)
         case ReadFlagAndTurn(from, of) =>
+          // read flag and turn for a node
           from ! ReadFlagAndTurnReply(flagMap(of), turn)
           Behaviors.same
         case _ => Behaviors.unhandled

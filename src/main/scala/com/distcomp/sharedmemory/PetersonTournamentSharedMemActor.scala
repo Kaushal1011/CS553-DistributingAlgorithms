@@ -24,12 +24,15 @@ object PetersonTournamentSharedMemActor {
     Behaviors.receive { (context, message) =>
       message match {
         case SetFlagTournament(internalNode, bitFlag, flag) =>
+          // set flag for a node
           val updatedFlagBitMap = flagBitMap.updated(internalNode, flagBitMap(internalNode).updated(bitFlag, flag))
           active(updatedFlagBitMap, turnMap)
         case SetTurnTournament(internalNode, turn) =>
+          // set turn for a node
           val updatedTurnMap = turnMap.updated(internalNode, turn)
           active(flagBitMap, updatedTurnMap)
         case ReadFlagAndTurnTournament(from, internalNode, bit) =>
+          // read flag and turn for a node
           from ! ReadFlagAndTurnTournamentReply(flagBitMap(internalNode)(bit), turnMap(internalNode), internalNode)
           Behaviors.same
         case _ => Behaviors.unhandled

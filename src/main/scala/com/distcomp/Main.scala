@@ -11,6 +11,7 @@ object Main extends App {
     System.exit(1)
   }
 
+  // extract the simulation plan file name from the command line arguments
   private val simulationPlanFileName = args(0)
   println(s"Starting simulation with plan from JSON file: $simulationPlanFileName")
 
@@ -21,7 +22,5 @@ object Main extends App {
   // Create the Initialiser actor
   private val initialiser = system.systemActorOf(Intialiser(system.ref), "Initialiser")
 
-  // Assuming SimulatorActor's apply method accepts an ActorRef to the Initialiser and a String for the simulation plan
-  // Note: Adjust SimulatorActor to appropriately handle the simulation plan content or file path as required
   system ! SimulatorProtocol.StartSimulation(simulationPlanFileName, initialiser)
 }

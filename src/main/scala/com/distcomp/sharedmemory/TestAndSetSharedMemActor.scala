@@ -18,11 +18,14 @@ object TestAndSetSharedMemActor {
     Behaviors.receive { (context, message) =>
       message match {
         case SetLockRequest(from) =>
+          // set lock to true
           from ! SetLockResponse(bool)
           active(true)
         case UnlockRequest =>
+          // set lock to false
           active(false)
         case ReadLockRequest(from) =>
+          // read lock value
           from ! ReadLockResponse(context.self, bool)
           Behaviors.same
         case _ =>

@@ -32,6 +32,7 @@ object AgrawalElAbbadi {
     }
   }
 
+  // active state of the node in the Agrawal-ElAbbadi algorithm
   def active(
               nodeId: String,
               parent: ActorRef[Message],
@@ -95,6 +96,9 @@ object AgrawalElAbbadi {
             }
 
         case RequestGranted(nodeId) =>
+          //          permission granted to node, remove from quorum queue
+          //         if quorum queue is not empty, request permission from head of quorum queue
+          //        if quorum queue is empty, enter critical section
           context.log.info(s"Node $nodeId has granted permission to ${context.self.path.name}")
           if (quorumQueue.nonEmpty) {
             val children = tree.getOrElse(quorumQueue.head, Map.empty)

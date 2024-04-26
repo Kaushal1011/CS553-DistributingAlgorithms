@@ -7,6 +7,8 @@ import com.distcomp.common.PetersonTwoProcess._
 import com.distcomp.common.MutexProtocol._
 import com.distcomp.common.SimulatorProtocol.{SimulatorMessage, AlgorithmDone}
 
+// same as the textbook implementation
+
 object PetersonTwoProcess {
 
   def apply( node2: ActorRef[Message], sharedMemory: Option[ActorRef[Message]], simulator: ActorRef[SimulatorMessage]): Behavior[Message] = {

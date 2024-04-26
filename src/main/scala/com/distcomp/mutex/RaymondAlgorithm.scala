@@ -12,6 +12,7 @@ object RaymondAlgorithm {
   def apply(parent: ActorRef[Message], children: Set[ActorRef[Message]], hasToken: Boolean, queue: List[ActorRef[Message]] = List(), simulator: ActorRef[SimulatorMessage], timestamp: Int): Behavior[Message] = Behaviors.receive { (context, message) =>
     message match {
       case StartCriticalSectionRequest =>
+        // When a node wants to enter its critical section, it sends a request to its parent
         context.log.info(s"${context.self.path.name} starting critical section request")
         if (hasToken) {
           context.log.info(s"Node ${context.self.path.name} has the token, enter critical section initated by Simulator")
@@ -25,6 +26,7 @@ object RaymondAlgorithm {
         }
 
       case AddToQueue(process) =>
+        // When a node receives a new process, it adds it to the queue
         context.log.info(s"Node ${context.self.path.name} has received a new process to add to the queue: ${process.path.name}")
         if (queue.isEmpty) {
             parent ! RequestToken(context.self)

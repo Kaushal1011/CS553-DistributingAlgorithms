@@ -8,6 +8,8 @@ import com.distcomp.common.TestAndSetSharedMemProtocol._
 import com.distcomp.common.SimulatorProtocol.{SimulatorMessage, AlgorithmDone}
 
 
+// test and set mutex implementation in message passing
+
 object TestAndTestAndSetMutex {
 
   def apply( sharedMemory: Option[ActorRef[Message]], simulator: ActorRef[SimulatorMessage]): Behavior[Message] = {
