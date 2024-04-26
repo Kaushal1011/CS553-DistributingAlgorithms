@@ -6,21 +6,26 @@ import akka.actor.typed.scaladsl.ActorContext
 import scala.io.Source
 import scala.util.matching.Regex
 
-
+// Object Initialiser is responsible for setting up the network of nodes and handling network-related messages
 object Intialiser {
 
+  // The apply method is the entry point for this object
   def apply(simulator: ActorRef[SimulatorProtocol.SimulatorMessage]): Behavior[Message] =
     behavior(Map.empty, simulator, None)
 
+  // The behavior method defines how this actor should behave when it receives a message
   private def behavior(nodeMap: Map[String, ActorRef[Message]], simulator: ActorRef[SimulatorProtocol.SimulatorMessage], failureDetector: Option[ActorRef[Message]]): Behavior[Message] =
     Behaviors.receive { (context, message) =>
       message match {
+        // SetupNetwork message is used to setup the network of nodes
         case SetupNetwork(dotFilePath, isDirected, createRing, createClique,createBinTree,enableFailureDetector ,simulator) =>
           val updatedNodeMap = setupNetwork(context, dotFilePath, isDirected, createRing, createClique, createBinTree,enableFailureDetector, simulator, failureDetector)
           behavior(updatedNodeMap, simulator, None)
+        // KillAllNodes message is used to stop all the nodes in the network
         case KillAllNodes =>
           killAllNodes(context, nodeMap, simulator, failureDetector)
           behavior(Map.empty, simulator, None)
+        // For any other message, we do not change the actor's behavior
         case _ => Behaviors.unhandled
       }
     }
