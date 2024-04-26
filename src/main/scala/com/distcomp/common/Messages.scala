@@ -69,7 +69,8 @@ object TouegProtocol {
 
   // Message Definitions
 
-  case class  StartRoutingT(allNodes : Set[ActorRef[Message]], pivot: ActorRef[Message]) extends Message
+  case class  StartRoutingT(allNodes: Set[ActorRef[Message]], pivots: Map[Int, ActorRef[Message]]) extends Message
+  case class  NotifyPivot(node: ActorRef[Message], round: Int) extends Message
   case class  Request(allNodes : Set[ActorRef[Message]]) extends Message
   case class RequestRouting(round: Int, requester: ActorRef[Message]) extends Message
   case class ProvideRoutingInfo(map: Map[ActorRef[Message],Int], from: ActorRef[Message]) extends Message

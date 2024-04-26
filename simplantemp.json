@@ -2,7 +2,7 @@
   "steps": [
 
     {
-      "dotFilePath": "ExampleNetwork.dot",
+      "dotFilePath": "MyDotFile.dot",
       "isDirected": false,
       "createRing": false,
       "createClique": false,

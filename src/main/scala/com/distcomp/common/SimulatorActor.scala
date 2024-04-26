@@ -134,31 +134,20 @@ object SimulatorActor {
         context.log.info("Executing Toueg Algorithm")
         Thread.sleep(1000)
 
-        // write a for loop for nodes.size times
-        val pivots = Set.empty[ActorRef[Message]]
         nodes.foreach(node => node ! SetAllNodes(nodes))
         Thread.sleep(4000)
-        nodes.foreach{
-          case node =>
-            // remove pivots from nodes
-            Thread.sleep(4000)
-            val cleanedNodes = nodes -- pivots
-            // randomly select a pivot from cleaned nodes
-            val pivot = cleanedNodes.toSeq(Random.nextInt(cleanedNodes.size))
 
-            //log pivot
-            context.log.info(s"Selected pivot: ${pivot.path.name}")
-            //add pivot to pivots
-            pivots + pivot
+        // make a map of shuffled nodes with int from 0 to n-1
+        val shuffledNodes = Random.shuffle(nodes)
+        val pivots = shuffledNodes.zipWithIndex.map { case (node, index) => index -> node }.toMap
 
-            nodes.foreach(node => node ! StartRoutingT(nodes, pivot))
-        }
+        nodes.foreach(node => node ! StartRoutingT(nodes, pivots))
 
 //
 //        Thread.sleep(1000)
 
 
-        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,nodes.size)
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,nodes.size*2)
 
       case "frederickson" =>
         Thread.sleep(1000)

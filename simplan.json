@@ -15,16 +15,18 @@
       }
     },
     {
+      "dotFilePath
+    {
       "dotFilePath": "ExampleNetwork.dot",
       "isDirected": false,
       "createRing": false,
-      "createClique": true,
+      "createClique": false,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "merlin-segall",
+      "algorithm": "chandy-misra",
       "additionalParameters": {
-        "initiators": 1,
-        "additional": 0,
+        "l": 3,
+        "totalNodes": 26,
         "kill": 1
       }
     },
@@ -32,13 +34,69 @@
       "dotFilePath": "ExampleNetwork.dot",
       "isDirected": false,
       "createRing": false,
-      "createClique": true,
+      "createClique": false,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "toueg",
+      "algorithm": "merlin-segall",
       "additionalParameters": {
-        "initiators": 1,
-        "additional": 0,
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "frederickson",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "MyDotFile.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "chandy-misra",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "MyDotFile.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "merlin-segall",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "MyDotFile.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "frederickson",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
         "kill": 1
       }
     }
