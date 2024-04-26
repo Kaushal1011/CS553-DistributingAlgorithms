@@ -1,0 +1,19 @@
+{
+  "steps": [
+
+    {
+      "dotFilePath": "toueg.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "toueg",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    }
+  ]
+}

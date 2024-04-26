@@ -1,0 +1,18 @@
+{
+  "steps": [
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "frederickson",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    }
+  ]
+}

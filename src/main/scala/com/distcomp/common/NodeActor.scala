@@ -1,5 +1,6 @@
 package com.distcomp.common
 
+import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
@@ -12,6 +13,9 @@ import com.distcomp.election.EchoElection
 import com.distcomp.election.TreeElection
 import com.distcomp.election.Tree
 import com.distcomp.mutex.{BakeryAlgorithm, NodeActorBinaryTree, PetersonTournament, PetersonTwoProcess, RicartaAgarwal, RicartaAgarwalCarvalhoRoucairol, TestAndSetMutex, TestAndTestAndSetMutex}
+
+import com.distcomp.mutex.{NodeActorBinaryTree, RicartaAgarwal, RicartaAgarwalCarvalhoRoucairol}
+import com.distcomp.routing.{ChandyMisra, Frederickson, Toueg}
 
 
 object NodeActor {
@@ -121,6 +125,23 @@ object NodeActor {
             case "bracha-toueg" =>
               context.log.info("Switching to Bracha Toueg Algorithm")
               BrachaToueg(context.self.path.name)
+
+            case "chandy-misra" =>
+              context.log.info("Switching the algorithm to Chandy-Misra in nodeActor")
+              ChandyMisra(context.self.path.name, edges, simulator)
+
+            case "merlin-segall" =>
+              context.log.info("Switching to Spanning Tree Behavior, needs tree building")
+              SpanningTreeBuilder(context.self.path.name, edges.keySet, edges, simulator, timestamp)
+
+            case "toueg" =>
+              context.log.info("Switching the algorithm to Toueg in nodeActor")
+              Toueg(context.self, edges, Set.empty, simulator)
+
+            case "frederickson" =>
+              context.log.info("Switching the algorithm to Frederickson in nodeActor")
+              Frederickson(context.self.path.name, edges, 3, simulator)
+
             case _ =>
               context.log.info("Algorithm not recognized in nodeActor")
               Behaviors.unhandled
