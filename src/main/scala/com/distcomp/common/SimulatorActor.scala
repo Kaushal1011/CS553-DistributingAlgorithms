@@ -2,16 +2,18 @@ package com.distcomp.common
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import com.distcomp.common.BrachaMessages.EnableBrachaBehaviour
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
 import com.distcomp.common.ElectionProtocol._
 import com.distcomp.common.FranklinProtocol.SetRandomNodeId
-import com.distcomp.sharedmemory.{PetersonSharedMemActor, PetersonTournamentSharedMemActor, BakerySharedMemActor, TestAndSetSharedMemActor}
 
 import com.distcomp.common.TreeElectionProtocol._
 //import com.distcomp.common.TreeProtocol.WakeUpPhase
 import com.distcomp.common.TreeProtocol._
+import com.distcomp.sharedmemory.{BakerySharedMemActor, PetersonSharedMemActor, PetersonTournamentSharedMemActor, TestAndSetSharedMemActor}
+
 
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
@@ -21,6 +23,7 @@ import com.distcomp.common.PetersonTwoProcess._
 
 import java.time.Instant
 import java.time.InstantSource.system
+import scala.collection.mutable
 
 object SimulatorActor {
   def apply(): Behavior[SimulatorMessage] = behavior(Set.empty, Set.empty, List.empty)
@@ -45,15 +48,15 @@ object SimulatorActor {
 
   // Function to handle algorithm execution logic
   private def executeAlgorithm(
-                        step: SimulationStep,
-                        nodes: Set[ActorRef[Message]],
-                        numInitiators: Int,
-                        additional: Int,
-                        context: ActorContext[SimulatorMessage],
-                        readyNodes: Set[String],
-                        simulationSteps: List[SimulationStep],
-                        intialiser: ActorRef[Message]
-                      ): Behavior[SimulatorMessage] = {
+                                step: SimulationStep,
+                                nodes: Set[ActorRef[Message]],
+                                numInitiators: Int,
+                                additional: Int,
+                                context: ActorContext[SimulatorMessage],
+                                readyNodes: Set[String],
+                                simulationSteps: List[SimulationStep],
+                                intialiser: ActorRef[Message]
+                              ): Behavior[SimulatorMessage] = {
     step.algorithm match {
       case "ricart-agarwala" =>
         Thread.sleep(1000)
@@ -96,7 +99,7 @@ object SimulatorActor {
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
 
-      case "raymonds-algo"=>
+      case "raymonds-algo" =>
         // select a node randomly for spanning tree root and then wait to complete and then start raymonds algorithm
         context.log.info("Waiting for spanning tree to complete.")
         nodes.take(1).foreach(node => node ! InitiateSpanningTree)
@@ -105,7 +108,7 @@ object SimulatorActor {
 
       case "peterson-two-process" =>
         // spawn shared memory actor
-        val sharedMemory = context.spawn(PetersonSharedMemActor(nodes), "shared-memory"+ Instant.now.getEpochSecond.toString)
+        val sharedMemory = context.spawn(PetersonSharedMemActor(nodes), "shared-memory" + Instant.now.getEpochSecond.toString)
 
         nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
 
@@ -120,7 +123,7 @@ object SimulatorActor {
         context.log.info("Executing Peterson's tournament algorithm.")
         // get actor by name or spawn new actor
 
-        val sharedMemory = context.spawn(PetersonTournamentSharedMemActor(nodes), "shared-memory-pt" + Instant.now.getEpochSecond.toString )
+        val sharedMemory = context.spawn(PetersonTournamentSharedMemActor(nodes), "shared-memory-pt" + Instant.now.getEpochSecond.toString)
 
         nodes.foreach(node => node ! EnableSharedMemory(sharedMemory))
 
@@ -226,7 +229,7 @@ object SimulatorActor {
         // nodes go into election mode once election leader is appointed it sends termination message to simulator
         // termination detection here is not weight throwing it just expects one reply from leader
 
-        behaviorAfterInit(nodes, readyNodes, simulationSteps,intialiser, 1)
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
       case "franklin" =>
         context.log.info("Executing Franklin Algorithm")
         Thread.sleep(2000)
@@ -242,12 +245,12 @@ object SimulatorActor {
         // wait for new ids
         Thread.sleep(2000)
 
-//        context.log.info(s"$nodes")
+        //        context.log.info(s"$nodes")
 
         // randomly take x initiators and send initate message to start election
         nodes.take(numInitiators).foreach(node => node ! StartElection)
 
-        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
       case "echo-election" =>
         context.log.info("Executing Echo Election Algorithm")
 
@@ -255,7 +258,7 @@ object SimulatorActor {
         // randomly take x initiators and send initate message to start election
         nodes.take(numInitiators).foreach(node => node ! StartElection)
 
-        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
 
       case "dolev-klawe-rodeh" =>
         context.log.info("Executing Dolev-Klawe-Rodeh Algorithm")
@@ -264,7 +267,39 @@ object SimulatorActor {
         // randomly take x initiators and send initate message to start election
         nodes.take(numInitiators).foreach(node => node ! wakeUpPhase )
 
-        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
+
+      case "bracha-toueg" =>
+        context.log.info("Executing Bracha Toueg Deadlock detection algorithm")
+
+        val tot = nodes.size
+
+        val dependencies = mutable.Map.empty[ActorRef[Message], mutable.Set[ActorRef[Message]]]
+
+        // Selecting a random number of dependecies for each nodes
+        for (no <- nodes) {
+          var dep = Random.nextInt(tot / 3)
+
+          if (dep < 0.9 * (tot / 3) || dep > 0.75 * (tot / 3)) dep = 0
+
+          val randomDeps = mutable.Set.from(Random.shuffle(nodes).take(dep))
+
+          if (randomDeps.contains(no)) {
+            randomDeps.remove(no)
+          }
+
+          randomDeps.foreach(f => {
+            if (dependencies(f).contains(no)) {
+              dependencies(f).remove(no)
+            }
+          })
+        }
+
+        for (no <- nodes) {
+          no ! EnableBrachaBehaviour(dependencies(no))
+        }
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
 
       case "tree-election" =>
         context.log.info("Executing Tree Election Algorithm")
@@ -290,15 +325,15 @@ object SimulatorActor {
 
 
   private def secondStepExecuteAlgorithm(
-                                       step: SimulationStep,
-                                       nodes: Set[ActorRef[Message]],
-                                       numInitiators: Int,
-                                       additional: Int,
-                                       context: ActorContext[SimulatorMessage],
-                                       readyNodes: Set[String],
-                                       simulationSteps: List[SimulationStep],
-                                       intialiser: ActorRef[Message]
-                                     ): Behavior[SimulatorMessage] = {
+                                          step: SimulationStep,
+                                          nodes: Set[ActorRef[Message]],
+                                          numInitiators: Int,
+                                          additional: Int,
+                                          context: ActorContext[SimulatorMessage],
+                                          readyNodes: Set[String],
+                                          simulationSteps: List[SimulationStep],
+                                          intialiser: ActorRef[Message]
+                                        ): Behavior[SimulatorMessage] = {
 
     step.algorithm match {
 
@@ -318,14 +353,13 @@ object SimulatorActor {
   }
 
 
-
   private def behaviorAfterInit(
-                                  nodes: Set[ActorRef[Message]],
-                                  readyNodes: Set[String],
-                                  simulationSteps: List[SimulationStep],
-                                  intialiser: ActorRef[Message],
-                                  repliesToWait: Int = 0
-                                ): Behavior[SimulatorMessage] =
+                                 nodes: Set[ActorRef[Message]],
+                                 readyNodes: Set[String],
+                                 simulationSteps: List[SimulationStep],
+                                 intialiser: ActorRef[Message],
+                                 repliesToWait: Int = 0
+                               ): Behavior[SimulatorMessage] =
     Behaviors.receive { (context, message) =>
       message match {
         case RegisterNode(node, nodeId) =>
@@ -333,8 +367,8 @@ object SimulatorActor {
 
         case NodeReady(nodeId) =>
           val updatedReadyNodes = readyNodes + nodeId
-//          context.log.info(s"Ready nodes: ${updatedReadyNodes.size}")
-//          context.log.info(s"Total nodes: ${nodes.size}")
+          //          context.log.info(s"Ready nodes: ${updatedReadyNodes.size}")
+          //          context.log.info(s"Total nodes: ${nodes.size}")
 
           if (updatedReadyNodes.size == nodes.size) {
             context.log.info("All nodes are ready. Simulation can start.")
@@ -343,13 +377,13 @@ object SimulatorActor {
             val numInitiators = step.additionalParameters.getOrElse("initiators", 1)
             val additional = step.additionalParameters.getOrElse("additional", 0)
             executeAlgorithm(step, nodes, numInitiators, additional, context, updatedReadyNodes, simulationSteps, intialiser)
-          }else {
+          } else {
             behaviorAfterInit(nodes, updatedReadyNodes, simulationSteps, intialiser, repliesToWait)
           }
 
-        case SpanningTreeCompletedSimCall(sender,parent,children) =>
+        case SpanningTreeCompletedSimCall(sender, parent, children) =>
 
-          if (sender.path.name == parent.path.name){
+          if (sender.path.name == parent.path.name) {
             context.log.info("Spanning tree completed. got message from spanning tree builder. Proceeding to next step.")
             val step = simulationSteps.head
             nodes.foreach(_ ! SwitchToAlgorithm(step.algorithm, step.additionalParameters))
@@ -378,7 +412,7 @@ object SimulatorActor {
 
             val remaingSteps = simulationSteps.tail
 
-            if (remaingSteps.nonEmpty && step.additionalParameters.getOrElse("kill", 0) == 0){
+            if (remaingSteps.nonEmpty && step.additionalParameters.getOrElse("kill", 0) == 0) {
               val nextStep = remaingSteps.head
 
               context.log.info(s"Initialising network for step: $nextStep")
@@ -387,7 +421,7 @@ object SimulatorActor {
 
               behaviorAfterInit(nodes, readyNodes, remaingSteps, intialiser, 1)
             }
-            else if (remaingSteps.nonEmpty){
+            else if (remaingSteps.nonEmpty) {
               behaviorAfterInit(nodes, readyNodes, remaingSteps, intialiser, 1)
             }
             else {
@@ -409,18 +443,18 @@ object SimulatorActor {
 
             Behaviors.stopped
           }
-          else{
+          else {
             val step = remainingSteps.head
             context.log.info(s"Initialising network for step: $step")
             Thread.sleep(500)
             intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique,step.createBinTree, step.enableFailureDetector ,context.self)
+
             behaviorAfterInit(Set.empty, Set.empty, remainingSteps, intialiser, 1)
           }
 
         case _ => Behaviors.unhandled
       }
     }
-
 
 
   private def behavior(nodes: Set[ActorRef[Message]], readyNodes: Set[String], simulationSteps: List[SimulationStep]): Behavior[SimulatorMessage] =
@@ -435,7 +469,7 @@ object SimulatorActor {
           simulationSteps.headOption.foreach { step =>
             intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, step.createBinTree, step.enableFailureDetector, context.self)
           }
-          behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
+          behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
 
         case RegisterNode(node, nodeId) =>
           behavior(nodes + node, readyNodes, simulationSteps)
