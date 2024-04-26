@@ -2,14 +2,14 @@
   "steps": [
     {
       "dotFilePath": "ExampleNetwork.dot",
-      "isDirected": true,
-      "createRing": true,
+      "isDirected": false,
+      "createRing": false,
       "createClique": false,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "test-and-test-and-set",
+      "algorithm": "tree-election",
       "additionalParameters": {
-        "initiators": 5,
+        "initiators": 6,
         "additional": 0,
         "kill": 1
       }
