@@ -1,7 +1,7 @@
 package com.distcomp.common
 
-import akka.actor.typed.{ActorRef, Behavior}
-import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
+import akka.actor.typed.{ActorRef, Behavior }
+import akka.actor.typed.scaladsl.{Behaviors, ActorContext}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
@@ -116,20 +116,14 @@ object SimulatorActor {
         Thread.sleep(1000)
         context.log.info("Executing Chandy-Misra Algorithm")
         nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
-        // expects only root to send termination messages to simulator for successful execution hence readyNodes.size is passes as repliesToWait
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
 
       case "merlin-segall" =>
 
         context.log.info("Waiting for spanning tree to complete.")
         nodes.take(1).foreach(node => node ! InitiateSpanningTree)
-//        Thread.sleep(1000)
-//        context.log.info("Executing Merlin-Segall Algorithm")
-//        nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1, Some(readyNodes.size))
-//        context.log.info("Switching the algorithm to Merlin-Segall in nodeActor")
-//        MerlinSegall(context.self.path.name, readyNodes, simulationSteps, intialiser)
-//
+
       case "toueg" =>
         context.log.info("Executing Toueg Algorithm")
         Thread.sleep(1000)
@@ -141,12 +135,7 @@ object SimulatorActor {
         nodes.foreach(node => node ! SetAllNodes(nodes))
           Thread.sleep(1000)
 
-
-
         nodes.foreach(node => node ! StartRoutingT(nodes, pivots))
-
-//
-//        Thread.sleep(1000)
 
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,nodes.size)
@@ -158,9 +147,6 @@ object SimulatorActor {
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser,1)
         //
-
-
-
 
       case _ =>
         context.log.info("Algorithm not recognized in Simulator .")
@@ -198,7 +184,6 @@ object SimulatorActor {
       case "merlin-segall" =>
         context.log.info("Executing Merlin-Segall Algorithm")
         nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
-
 
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)

@@ -2,6 +2,7 @@ package com.distcomp.common
 
 import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.{ActorRef, Behavior}
+import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.SimulatorProtocol.{NodeReady, RegisterNode}
 import com.distcomp.election.ChangRoberts
 import com.distcomp.mutex.{NodeActorBinaryTree, RicartaAgarwal, RicartaAgarwalCarvalhoRoucairol}
