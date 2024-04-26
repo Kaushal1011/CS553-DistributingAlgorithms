@@ -2,14 +2,14 @@
   "steps": [
     {
       "dotFilePath": "ExampleNetwork.dot",
-      "isDirected": false,
-      "createRing": false,
+      "isDirected": true,
+      "createRing": true,
       "createClique": false,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "franklin",
+      "algorithm": "dolev-klawe-rodeh",
       "additionalParameters": {
-        "initiators": 8,
+        "initiators": 7,
         "additional": 0,
         "kill": 1
       }

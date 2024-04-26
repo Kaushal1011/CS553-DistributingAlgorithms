@@ -37,7 +37,7 @@ object TreeElection {
           Thread.sleep(1000)
 
           if(edges.size == 1){
-            //            val neighbour = edges.keys.head
+            context.log.info(s"Node $nodeId started election")
             context.log.info(s"Node $nodeId sends msg to its only egde ${edges.keys.head.path.name}")
             val parent = edges.keys.head
             parent ! MakeParent(nodeId, context.self, maxChild, maxChildRef)

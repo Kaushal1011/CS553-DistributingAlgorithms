@@ -13,7 +13,7 @@ object Franklin{
             simulator: ActorRef[SimulatorMessage]): Behavior[Message] = { Behaviors.setup {
     (context) =>
       // during setup we need to set the edges previous and next based on ordering of nodes
-      // for simulation, simulator shufles ids later so election can progress in rounds
+      // for simulation, simulator shuffles ids later so election can progress in rounds
 
 //      context.log.info("Franklin Algorithm in apply")
       // this assumes first node is always 0
@@ -21,14 +21,16 @@ object Franklin{
         val nextNodeRef = edges.keys.minBy(e => extractId(e.path.name))
         val prevNodeRef = edges.keys.maxBy(e => extractId(e.path.name))
 //        context.log.info(s"edges for 0 node are ${edges.keys}")
-        context.log.info(s"$nodeId started election with next node ${nextNodeRef.path.name} and prev node ${prevNodeRef.path.name}")
+        context.log.info(s"$nodeId initiates process with next node ${nextNodeRef.path.name} and prev node ${prevNodeRef.path.name}")
+//        context.log.info(s"$nodeId started election")
         passive(nodeId, nextNodeRef, prevNodeRef, 0, simulator)
       }
       else {
         val prevNodeRef = edges.keys.find(e => extractId(e.path.name) == extractId(nodeId) - 1).getOrElse(edges.keys.maxBy(e => extractId(e.path.name)))
         // current node id + 1 or 0
         val nextNodeRef = edges.keys.find(e => extractId(e.path.name) == extractId(nodeId) + 1).getOrElse(edges.keys.minBy(e => extractId(e.path.name)))
-        context.log.info(s"$nodeId started election with next node ${nextNodeRef.path.name} and prev node ${prevNodeRef.path.name}")
+        context.log.info(s"$nodeId initiates process with next node ${nextNodeRef.path.name} and prev node ${prevNodeRef.path.name}")
+//        context.log.info(s"$nodeId started election")
         passive(nodeId, nextNodeRef, prevNodeRef, 0, simulator)
       }
 
@@ -96,7 +98,6 @@ object Franklin{
             }
             else {
 
-
               val maxId = Math.max(Math.max(nextIdNum, prevIdNum), curIdNum)
 
               if (maxId == curIdNum){
@@ -127,9 +128,11 @@ object Franklin{
 
        case Winner =>
          context.log.info(s"$nodeId is the winner original id ${context.self.path.name}")
-         simulator ! SimulatorProtocol.AlgorithmDone
-         Behaviors.same
-
+//         Thread.sleep(1000)
+         context.self ! Winner
+         passive(nodeId, nextNode, prevNode, round, simulator)
+//         simulator ! SimulatorProtocol.AlgorithmDone
+//         Behaviors.same
 
        case _ => Behaviors.unhandled
      }
@@ -140,7 +143,7 @@ object Franklin{
     Behaviors.receive { (context, message) =>
       message match {
         case StartElection =>
-          context.log.info(s"$nodeId started election with request from sim")
+          context.log.info(s"$nodeId started election t with request from sim")
           context.self ! StartElection
           active(nodeId, nextNode, prevNode, 0, None, None, simulator)
         case ElectionMessageFP(candidateId, round, from, direction) =>
@@ -153,9 +156,12 @@ object Franklin{
           }
           Behaviors.same
         case Winner =>
-          context.log.info(s"$nodeId is the winner ${context.self.path.name}")
+          context.log.info(s"$nodeId is the winner. original id is: ${context.self.path.name}")
+          Thread.sleep(2000)
           simulator ! SimulatorProtocol.AlgorithmDone
-          Behaviors.same
+          Behaviors.stopped
+
+          //Set random value for nodes.
         case SetRandomNodeId(newNodeId) =>
           passive(newNodeId, nextNode, prevNode, round, simulator)
 

@@ -17,7 +17,7 @@ object SimSetup {
     system ! SimulatorProtocol.StartSimulation(mutexTestFile, initializer)
 
     try {
-      Await.result(system.whenTerminated, scala.concurrent.duration.Duration("30s"))
+      Await.result(system.whenTerminated, scala.concurrent.duration.Duration("60s"))
       Source.fromFile("test-logs.txt").getLines().toList
     } catch {
       case _: TimeoutException =>

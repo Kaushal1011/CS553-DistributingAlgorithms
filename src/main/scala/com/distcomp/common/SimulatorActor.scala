@@ -262,7 +262,7 @@ object SimulatorActor {
 
         Thread.sleep(2000)
         // randomly take x initiators and send initate message to start election
-        nodes.take(numInitiators).foreach(node => node ! wakeUpPhase )
+        nodes.take(numInitiators).foreach(node => node ! StartElection )
 
         behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
 

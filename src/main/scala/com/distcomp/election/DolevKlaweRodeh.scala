@@ -29,7 +29,7 @@ object DolevKlaweRodeh {
       message match {
         case StartElection =>
           //start of election each active process sends an election message to its neighbor in directed ring
-          context.log.info(s"$nodeId started election")
+          context.log.info(s"$nodeId initiated rounds from passive")
           nextNode ! ElectionMessageDKRP(nodeId, 0, 0, context.self)
           active(nodeId, nextNode, pValue, round, simulator)
         //
@@ -83,6 +83,10 @@ object DolevKlaweRodeh {
 //          simulator ! VictoryMessage(leaderId)
           simulator ! AlgorithmDone
           Behaviors.same
+
+        case _ =>
+          // other unhandled messages
+          Behaviors.unhandled
       }
     }
 
@@ -98,11 +102,6 @@ object DolevKlaweRodeh {
         case ElectionMessageDKRP(candidateId, msgStat, round, from) =>
           nextNode ! ElectionMessageDKRP(candidateId, msgStat,round, context.self)
           Behaviors.same
-
-//        case Winner =>
-//          context.log.info(s"$nodeId is the winner ${context.self.path.name}")
-////          simulator ! AlgorithmDone
-//          Behaviors.same
 
         case VictoryMessage(leaderId) =>
           context.log.info(s"$nodeId received victory message")

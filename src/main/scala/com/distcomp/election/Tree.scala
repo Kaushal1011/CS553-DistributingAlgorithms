@@ -3,7 +3,7 @@ package com.distcomp.election
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
 import com.distcomp.common.Message
-import com.distcomp.common.SimulatorProtocol.SimulatorMessage
+import com.distcomp.common.SimulatorProtocol.{AlgorithmDone, SimulatorMessage}
 import com.distcomp.common.TreeProtocol._
 import com.distcomp.common.utils.extractId
 object Tree {
@@ -26,6 +26,8 @@ object Tree {
           if(edges.size == 1){
 //            val neighbour = edges.keys.head
             context.log.info(s"Node $nodeId sends msg to its only egde ${edges.keys.head.path.name}")
+            context.log.info(s"Node $nodeId started election")
+
             val parent = edges.keys.head
             parent ! MakeParent(nodeId, context.self)
           }
@@ -61,6 +63,7 @@ object Tree {
           val isParent = extractId(nodeIdIncoming) < extractId(nodeId)
           if(isParent){
             context.log.info(s"Node $nodeId is the root of the tree")
+            simulator ! AlgorithmDone
 //            from ! Decide(nodeId, context.self)
             active(nodeId, neighbours, edges, context.self, receivedFrom, simulator)
           }

@@ -3,13 +3,13 @@
     {
       "dotFilePath": "ExampleNetwork.dot",
       "isDirected": false,
-      "createRing": false,
+      "createRing": true,
       "createClique": false,
       "createBinTree": false,
-      "enableFailureDetector": false,
+      "enableFailureDetector": true,
       "algorithm": "franklin",
       "additionalParameters": {
-        "initiators": 8,
+        "initiators": 5,
         "additional": 0,
         "kill": 1
       }

@@ -19,6 +19,17 @@ object LoggingTestUtils {
     initiatorCounts.length
   }
 
+  def getInitiatorCountsElection(logs: List[String]): Int = {
+    val initiatorCountsElection = logs
+      .filter(_.contains("started election"))
+
+//        println(s"Initiaitos eefbebfebf ${initiatorCountsElection}")
+
+//        println(s"Initiator counts: ${initiatorCountsElection.length}")
+
+    initiatorCountsElection.length
+  }
+
   def extractInitiatorsEntersAndExits(logs: List[String]): (Set[String], Set[String], Set[String]) = {
     val initiators = logs
       .filter(_.contains("starting critical section request"))
@@ -62,5 +73,13 @@ object LoggingTestUtils {
     enterExitPairs.forall{ case (enter, exit) => enter == exit }
   }
 
+  def verifyElectionLeader(logs: List[String]): Int= {
+    val leaders = logs
+      .filter(_.contains("I am the leader"))
+
+//    println("The leaders var " + leaders)
+        (leaders.length)
+
+  }
 
 }

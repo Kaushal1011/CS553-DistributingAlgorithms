@@ -25,6 +25,7 @@ object EchoElection{
     Behaviors.receive { (context, message) =>
       message match {
         case StartElection =>
+          context.log.info(s"Node $nodeId started election")
           context.log.info(s"Node $nodeId initiating spanning tree using Echo algorithm")
           neighbors.foreach(neighbor => neighbor ! EchoMessageElection(context.self, context.self))
           echoElection(nodeId, neighbors, context.self, children, receivedFrom, simulator, timestamp, true, selfInitiator=true, Some(context.self))
@@ -81,7 +82,7 @@ object EchoElection{
                   if (root || (initiator == context.self)) {
                     context.log.info(s"Node $nodeId is the root of the spanning tree")
                     context.log.info(s"Node $nodeId is the leader")
-                    //                  simulator ! AlgorithmDone
+                    simulator ! AlgorithmDone
                     echoElection(nodeId, neighbors, parent, children, newReceivedFrom, simulator, timestamp, root, selfInitiator = false, waveTag)
                   }
                   else {

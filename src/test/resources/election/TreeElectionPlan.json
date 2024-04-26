@@ -7,9 +7,9 @@
       "createClique": false,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "franklin",
+      "algorithm": "tree-election",
       "additionalParameters": {
-        "initiators": 8,
+        "initiators": 7,
         "additional": 0,
         "kill": 1
       }
