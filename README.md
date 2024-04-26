@@ -2,6 +2,14 @@
 
 This project is a simulation of various distributed computing algorithms implemented in Scala using the Akka framework.
 
+## Simulation Architecture
+
+
+
+
+## Testing Architecture
+
+
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
@@ -42,7 +50,7 @@ sbt clean compile test
 - ***Weight throwing for termination detection (Slight Variation)***
 - Moves to next simulation plan
 
-### Mutex
+### [Mutex](./docs/MutexAlgorithms.md)
 
 #### Message Passing based Algorithms
 
