@@ -1,19 +1,21 @@
 # CS553 Distributed Computing Project => Distributed Algorithms Simulation
 
-This project is a simulation of various distributed computing algorithms implemented in Scala using the Akka framework.
+This project is a simulation of various distributed computing algorithms implemented in Scala using the Akka framework. We use lightbend telemetry to monitor the performance of the simulation. The project includes the following features:
+- Automated simulation of distributed algorithms based on a simulation plan
+- Support for message-passing and shared memory algorithms
+- Integration with Lightbend Telemetry for monitoring the performance of the simulation
+- Visualization of the simulation results using Lightbend Telemetry on Prometheus and Grafana
+- Integration tests for the simulation
+- Unit tests for the shared memory algorithms
 
 ## Simulation Architecture
 
-
-
-
-## Testing Architecture
-
+![Simulation Architecture](docs/assets/553sysarch.png)
 
 ## Prerequisites
 
 Before you begin, ensure you have met the following requirements:
-- You have installed version 17 of [Java](https://www.oracle.com/java/technologies/javase-jdk17-downloads.html), [Scala](https://www.scala-lang.org/download/), and [sbt](https://www.scala-sbt.org/download.html).
+- You have installed version 17 of [Java](https://www.oracle.com/java/technologies/javase-jdk17-downloads.html), supported version of  [Scala](https://www.scala-lang.org/download/), and [sbt](https://www.scala-sbt.org/download.html).
 
 
 ## Setting Up and Running the Project
@@ -31,6 +33,10 @@ This project includes both unit tests and integration tests. To run them, use th
 ```bash
 sbt clean compile test
 ```
+
+### Testing Approach
+
+![Testing Architecture](docs/assets/553testarch.png)
 
 ### Mutex Tests
 
@@ -74,21 +80,12 @@ sbt clean compile test
 - Test and Test and Set Lock Algorithm
   - Uses a custom actor for maintianing shared memory (Test and Test and Set Shared Mem Actor)  
 
-#### [Simulation Plan](./mutexsimplan.json)
-
-1. Ricart Agarwal
-2. Ricart Agarwal Carvalho Extension
-3. Raymonds Algorithm
-4. Agrawal El Abbadi
-5. Peterson's Algorithm (Tournament for N Processes) 26 Processes
-6. Peterson's Algorithm (Tournament for N Processes) 8 Processes
-7. Peterson's Algorithm (Two Process)
-8. Bakery Algorithm
-9. Test and Set Lock Algorithm
-10. Test and Test and Set Lock Algorithm
+> [Simulation Plan](./mutexsimplan.json)
 
 
 ### Telemetry 
 
-![Mutex Telemetry](./assets/mutexsimplanrun.png)
+The below image shows the telemetry data for the simulation run with the `mutexsimplan.json` simulation plan.
+
+![Mutex Telemetry](docs/assets/mutexsimplanrun.png)
 
