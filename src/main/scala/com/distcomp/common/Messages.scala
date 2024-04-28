@@ -162,7 +162,9 @@ object ElectionProtocol {
   case object StartElection extends Message
 
   case object StartNextRound extends Message
+
   case object wakeUpPhase extends Message
+
   case object Winner extends Message
 
   case class VictoryMessage(leaderId: String) extends Message
@@ -191,19 +193,25 @@ object DolevKlaweRodehProtocol {
 
 }
 
-object TreeElectionProtocol{
+object TreeElectionProtocol {
   case class ElectionMessageTE(candidateId: String, from: ActorRef[Message]) extends Message
+
   case class WakeUpPhaseMessage(fromNodeId: String, node: ActorRef[Message]) extends Message
-//  case object Initiate extends Message
-//  case class wakeUpPhaseMessage(candidateId: String, from: ActorRef[Message]) extends Message
-case object WakeUpPhase extends Message
-  case class MakeParent(nodeId:String, from: ActorRef[Message], maxChild: String, maxChildRef: ActorRef[Message]) extends Message
-  case class Decide(nodeId:String, from: ActorRef[Message], maxChild: String, maxChildRef:ActorRef[Message]) extends Message
+
+  //  case object Initiate extends Message
+  //  case class wakeUpPhaseMessage(candidateId: String, from: ActorRef[Message]) extends Message
+  case object WakeUpPhase extends Message
+
+  case class MakeParent(nodeId: String, from: ActorRef[Message], maxChild: String, maxChildRef: ActorRef[Message]) extends Message
+
+  case class Decide(nodeId: String, from: ActorRef[Message], maxChild: String, maxChildRef: ActorRef[Message]) extends Message
 }
 
 object TreeProtocol {
-  case class MakeParent(nodeId:String, from: ActorRef[Message]) extends Message
-  case class Decide(nodeId:String, from: ActorRef[Message]) extends Message
+  case class MakeParent(nodeId: String, from: ActorRef[Message]) extends Message
+
+  case class Decide(nodeId: String, from: ActorRef[Message]) extends Message
+
   case object Initiate extends Message
 
 }
@@ -222,9 +230,12 @@ object BrachaMessages {
 
   final case class Done(override val from: ActorRef[Message]) extends WaitForMessage
 
-  final case class StartDetection() extends Message
 
-  final case class EnableBrachaBehaviour(outgoingRequests: mutable.Set[ActorRef[Message]]) extends Message
+  final case class StartDetection(isInitiator: Boolean) extends Message
+
+  final case class ActivateNode(outgoingRequests: mutable.Set[ActorRef[Message]]) extends Message
+
+  final case class StartProcessing() extends Message
 
   final case class getStatus(override val from: ActorRef[Message]) extends WaitForMessage
 

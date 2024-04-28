@@ -2,13 +2,12 @@ package com.distcomp.common
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import com.distcomp.common.BrachaMessages.EnableBrachaBehaviour
+import com.distcomp.common.BrachaMessages.ActivateNode
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
 import com.distcomp.common.ElectionProtocol._
 import com.distcomp.common.FranklinProtocol.SetRandomNodeId
-
 import com.distcomp.common.TreeElectionProtocol._
 //import com.distcomp.common.TreeProtocol.WakeUpPhase
 import com.distcomp.common.TreeProtocol._
@@ -265,7 +264,7 @@ object SimulatorActor {
 
         Thread.sleep(2000)
         // randomly take x initiators and send initate message to start election
-        nodes.take(numInitiators).foreach(node => node ! wakeUpPhase )
+        nodes.take(numInitiators).foreach(node => node ! wakeUpPhase)
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
 
@@ -276,7 +275,7 @@ object SimulatorActor {
 
         val dependencies = mutable.Map.empty[ActorRef[Message], mutable.Set[ActorRef[Message]]]
 
-        // Selecting a random number of dependecies for each nodes
+        // Selecting a random number of dependencies for each nodes
         for (no <- nodes) {
           var dep = Random.nextInt(tot / 3)
 
@@ -296,7 +295,7 @@ object SimulatorActor {
         }
 
         for (no <- nodes) {
-          no ! EnableBrachaBehaviour(dependencies(no))
+          no ! ActivateNode(dependencies(no))
         }
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
@@ -307,16 +306,16 @@ object SimulatorActor {
         // randomly take x initiators and send initate message to start election
         nodes.take(numInitiators).foreach(node => node ! WakeUpPhase)
 
-        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
 
       case "tree" =>
         context.log.info("Executing Tree Algorithm")
         Thread.sleep(1000)
         // shuffle the nodes
 
-        nodes.foreach(node => node ! Initiate )
+        nodes.foreach(node => node ! Initiate)
 
-        behaviorAfterInit(nodes,readyNodes,simulationSteps,intialiser,1)
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
       case _ =>
         context.log.info("Algorithm not recognized in Simulator .")
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
@@ -441,7 +440,7 @@ object SimulatorActor {
 
           if (remainingSteps.isEmpty) {
             context.log.info("Simulation complete.")
-            //            stop the system
+            // stop the system
 
             Behaviors.stopped
           }
@@ -449,7 +448,7 @@ object SimulatorActor {
             val step = remainingSteps.head
             context.log.info(s"Initialising network for step: $step")
             Thread.sleep(500)
-            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique,step.createBinTree, step.enableFailureDetector ,context.self)
+            intialiser ! SetupNetwork(step.dotFilePath, step.isDirected, step.createRing, step.createClique, step.createBinTree, step.enableFailureDetector, context.self)
 
             behaviorAfterInit(Set.empty, Set.empty, remainingSteps, intialiser, 1)
           }

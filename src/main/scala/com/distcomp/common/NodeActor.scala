@@ -120,7 +120,7 @@ object NodeActor {
               EchoElection(context.self.path.name, edges.keySet, edges, simulator, timestamp)
             case "bracha-toueg" =>
               context.log.info("Switching to Bracha Toueg Algorithm")
-              BrachaToueg(context.self.path.name)
+              BrachaToueg(context.self.path.name, edges.keySet)
             case _ =>
               context.log.info("Algorithm not recognized in nodeActor")
               Behaviors.unhandled

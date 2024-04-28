@@ -1,68 +1,95 @@
 package com.distcomp.deadlock
 
-
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.Behaviors
-import com.distcomp.common.BrachaMessages._
-import com.distcomp.common.{BrachaMessages, Message}
 
 import scala.collection.mutable
+import scala.util.Random
+import com.distcomp.common.BrachaMessages._
+import com.distcomp.common.{Message, SetEdges}
 
 object BrachaToueg {
 
 
-  def apply(pId: String): Behavior[Message] = Behaviors.setup {
+  def apply(pId: String, edges: Set[ActorRef[Message]]): Behavior[Message] = Behaviors.setup {
 
     ctx => {
       ctx.log.info("Creating Deadlock node : {}", pId)
-      active(pId)
+      active(pId, edges = edges)
     }
-  }
 
-  def passive(pId: String): Behavior[Message] = Behaviors.receive {
-    (ctx, message) => {
-
-      message match {
-        case getStatus(from) =>
-          from ! NodeStatus(ctx.self, "passive")
-          Behaviors.same
-      }
-    }
   }
 
   def active(pId: String, incomingRequests: mutable.Set[ActorRef[Message]] = mutable.Set.empty,
-             outgoingRequests: mutable.Set[ActorRef[Message]] = mutable.Set.empty): Behavior[Message] = Behaviors.setup {
+             outgoingRequests: mutable.Set[ActorRef[Message]] = mutable.Set.empty,
+             edges: Set[ActorRef[Message]] = Set.empty, deadlockStarted: Boolean = false): Behavior[Message] = Behaviors.setup {
 
     context => {
 
       Behaviors.receiveMessage {
         msg => {
           msg match {
-            case BrachaMessages.getStatus(from) => {
-              from ! BrachaMessages.NodeStatus(context.self, "active")
-              Behaviors.same
-            }
-            case EnableBrachaBehaviour(newOutgoingRequests) => active(pId, incomingRequests, newOutgoingRequests)
-            case StartDetection() => {
-              context.log.info("Starting deadlock detection - {}", pId)
+            case ActivateNode(outgoingRequests) =>
+              active(pId, mutable.Set.empty, outgoingRequests, edges)
 
-              // TODO: Take a local snapshot and alert all edges to take snapshot as well
-              // TODO: start enforcing deadlock detection mode
+            case StartDetection(isInitiator) =>
 
+              if (!deadlockStarted) {
+                context.log.info("Starting deadlock detection - {}", pId)
+
+                for (e <- edges)
+                  e ! StartDetection(false)
+
+                Thread.sleep(880)
+
+                val in = incomingRequests
+                val out = outgoingRequests
+                val outReq = out.size
+                val remainingAcks = in.size
+                val remainingDone = out.size
+
+                detection(pId, in, out, outReq, remainingAcks = remainingAcks, remainingDone = remainingDone, isInitiator = isInitiator)
+              } else
+                Behaviors.same
+
+            case StartProcessing() =>
+              for (req <- outgoingRequests)
+                req ! ResourceRequest(context.self, snapshotTaken = false)
+
+              context.log.info("{} sleeping for 15s before starting deadlock detection", pId)
+              Thread.sleep(1500)
+              context.log.info("{} has woken up", pId)
+
+              if (!deadlockStarted)
+                if (outgoingRequests.nonEmpty)
+                  context.self ! StartDetection(true)
               Behaviors.same
-            }
-            case ResourceRequest(from, snapshotTaken) => {
+            case ResourceRequest(from, snapshotTaken) =>
               context.log.info("{} received a request from {}", context.self, from)
 
               if (outgoingRequests.isEmpty) {
-                Thread.sleep(300)
+                Thread.sleep(Random.nextInt(80))
                 from ! ResourceGrant(context.self, snapshotTaken)
               } else {
+                // TODO:
+              }
+              Behaviors.same
+            case ResourceGrant(from, _) =>
+              context.log.info("Received resource grant from {}", from)
 
+              if (outgoingRequests.contains(from))
+                outgoingRequests.remove(from)
+
+              if (outgoingRequests.isEmpty) {
+
+                for (req <- incomingRequests)
+                  req ! ResourceGrant(context.self, snapshotTaken = false)
+
+                incomingRequests.clear()
               }
 
-              Behaviors.same
-            }
+              active(pId, outgoingRequests, incomingRequests, edges)
+
             case _ => Behaviors.unhandled
           }
         }
@@ -70,10 +97,11 @@ object BrachaToueg {
     }
   }
 
-  def detection(pId: String, in: mutable.Set[ActorRef[Message]], out: mutable.Set[ActorRef[Message]], outReq: Int, free: Boolean = false,
-                notified: Boolean = false, remainingAcks: Int = 0, remainingDone: Int = 0,
-                firstNotifier: ActorRef[Message] = null, lastGranter: ActorRef[Message] = null,
-                isInitiator: Boolean = false): Behavior[Message] = Behaviors.setup {
+  def detection(pId: String, in: mutable.Set[ActorRef[Message]], out: mutable.Set[ActorRef[Message]],
+                outReq: Int, free: Boolean = false, notified: Boolean = false,
+                remainingAcks: Int = 0, remainingDone: Int = 0, isInitiator: Boolean = false,
+                firstNotifier: ActorRef[Message] = null, lastGranter: ActorRef[Message] = null
+               ): Behavior[Message] = Behaviors.setup {
 
     context => {
 
@@ -87,23 +115,23 @@ object BrachaToueg {
               context.log.info("{} has received notify from {}", pId, from)
 
               if (!notified) {
-                // notified = true
-                // firstNotifier = from
+
                 for (actor <- out) actor ! Notify(context.self)
 
                 if (outReq == 0) {
+
                   context.log.info("{} is Granting!", pId)
-                  // free = true
-                  for (nd <- in) {
+
+                  for (nd <- in)
                     nd ! Grant(context.self)
-                  }
+
                 }
 
-                detection(pId, in, out, outReq, free = true, notified = true, remainingAcks, remainingDone, from, lastGranter, isInitiator = isInitiator)
+                detection(pId, in, out, outReq, free = true, notified = true, remainingAcks, remainingDone, isInitiator = isInitiator, from, lastGranter)
 
-              } else {
+              } else
                 from ! Done(context.self)
-              }
+
               Behaviors.same
 
             case Grant(from) =>
@@ -112,7 +140,7 @@ object BrachaToueg {
                   context.log.info("{} Ready to Grant!", pId)
                   for (nd <- in) nd ! Grant(context.self)
                   detection(pId, in, out, outReq - 1, free = true, notified, remainingAcks, remainingDone,
-                    firstNotifier, lastGranter = from, isInitiator = isInitiator)
+                    isInitiator = isInitiator, firstNotifier, lastGranter = from)
                 } else {
                   from ! Acknowledgment(context.self)
                   Behaviors.same
@@ -126,43 +154,39 @@ object BrachaToueg {
               // remainingAcks -= 1
 
               if (remainingAcks == 1) {
-                if (lastGranter != null) {
+                if (lastGranter != null)
                   lastGranter ! Acknowledgment(context.self)
-                }
 
-                if (remainingDone == 0) {
-                  if (firstNotifier != null) {
+                if (remainingDone == 0)
+                  if (firstNotifier != null)
                     firstNotifier ! Done(context.self)
-                  }
-                }
               }
 
-              detection(pId, in, out, outReq, free, notified, remainingAcks - 1, remainingDone, firstNotifier,
-                lastGranter, isInitiator)
+              detection(pId, in, out, outReq, free, notified, remainingAcks - 1, remainingDone,
+                isInitiator, firstNotifier, lastGranter)
 
             case Done(_) =>
 
               if (remainingDone == 0) {
-                if (remainingAcks == 0) {
-                  if (firstNotifier != null) {
+                if (remainingAcks == 0)
+                  if (firstNotifier != null)
                     firstNotifier ! Done(context.self)
-                  }
-                }
 
                 if (isInitiator) {
                   context.log.info("Initiator received all Dones")
                   context.log.info("Value of free: {}", free)
-                  if (free) {
+
+                  if (free)
                     context.log.info("There's no deadlock!")
-                    active(pId, in, out)
-                  } else {
+                  else
                     context.log.info("There's a deadlock!")
-                    Behaviors.stopped
-                  }
+
+                  Behaviors.stopped
                 }
+
               }
 
-              detection(pId, in, out, outReq, free, notified, remainingAcks, remainingDone - 1, firstNotifier, lastGranter, isInitiator)
+              detection(pId, in, out, outReq, free, notified, remainingAcks, remainingDone - 1, isInitiator, firstNotifier, lastGranter)
 
             case _ => Behaviors.unhandled
 
