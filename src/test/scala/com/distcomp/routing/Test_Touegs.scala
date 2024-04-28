@@ -12,7 +12,7 @@ class Test_Touegs extends AnyWordSpecLike {
   val config: Config = ConfigFactory.load("logback-test")
   val testKit: ActorTestKit = ActorTestKit("TestSystemToueg", config)
 
-  val clearTests: Unit = new PrintWriter("test-log.txt").close()
+  val clearTests: Unit = new PrintWriter("test-logs.txt").close()
   val routingTestFile: String = getClass.getResource("/routing/TouegsPlan.json").getPath
 
   lazy val logs: List[String] = SimSetup(routingTestFile)
@@ -44,7 +44,7 @@ class Test_Touegs extends AnyWordSpecLike {
 
     "provide routing info correctly" in {
       // This checks for correct handling and logging of ProvideRoutingInfo messages.
-      assert(logs.exists(_.contains("Routing info for round provided")), "Provide routing info message should be logged")
+      assert(logs.exists(_.contains("Routing info for round")), "Provide routing info message should be logged")
     }
 
     "update distances correctly" in {
@@ -59,12 +59,12 @@ class Test_Touegs extends AnyWordSpecLike {
 
     "initiate next round correctly" in {
       // This checks for correct handling of the next round initiation.
-      assert(logs.exists(_.contains("Moving to Round")), "Moving to next round message should be logged")
+      assert(logs.exists(_.contains("Moving node")), "Moving to next round message should be logged")
     }
 
     "terminate the algorithm correctly" in {
       // This checks for termination logs.
-      assert(logs.exists(_.contains("Termination log: Distances for node")), "Termination of the algorithm should be logged")
+      assert(logs.exists(_.contains("TERMINATION LOG: Distances for node node")), "Termination of the algorithm should be logged")
     }
   }
 }

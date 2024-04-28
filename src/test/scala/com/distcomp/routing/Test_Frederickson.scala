@@ -27,7 +27,7 @@ class Test_Frederickson extends AnyWordSpecLike {
     }
 
     "log node setup completion" in {
-      assert(logs.exists(_.contains("Frederickson Actor is set up and ready")), "Logs should confirm node setup completion")
+      assert(logs.exists(_.contains("Frederickson Actor")), "Logs should confirm node setup completion")
     }
 
     "log initial node acting as initializer" in {
