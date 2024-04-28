@@ -30,8 +30,8 @@ object SimSetup {
 
   }
 
-  def getInitiators(mutexTestFile: String): Int = {
-    val source: BufferedSource = Source.fromFile(mutexTestFile)
+  def getInitiators(TestFile: String): Int = {
+    val source: BufferedSource = Source.fromFile(TestFile)
     val jsonStr: String = try source.mkString finally source.close()
     val json: JsValue = Json.parse(jsonStr)
     val testSteps: SimulationStep = (json \ "steps").as[List[SimulationStep]].headOption.head
