@@ -89,3 +89,12 @@ The below image shows the telemetry data for the simulation run with the `mutexs
 
 ![Mutex Telemetry](docs/assets/mutexsimplanrun.png)
 
+### Election
+- Chang Roberts 
+- Franklin 
+- Dolev Klawe Rodeh
+- Tree Election
+- Echo Election
+
+> [Election Plan](./electionSimPlan)
+
