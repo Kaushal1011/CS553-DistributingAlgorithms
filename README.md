@@ -96,5 +96,14 @@ The below image shows the telemetry data for the simulation run with the `mutexs
 - Tree Election
 - Echo Election
 
-> [Election Plan](./electionSimPlan)
+> [Election Plan](./electionSimPlan.json)
+
+
+### Routing
+- Chandy-Misra Algorithm with Djikstra-Scholten Termination
+- Merlin-Segall Algorithm 
+- Touegs Algorithm - Floyd Warshall Algorithm in Distributed Setting
+- Frederickson Algorithm
+
+> [Routing Plans](./routingsimplanrun.json)
 
