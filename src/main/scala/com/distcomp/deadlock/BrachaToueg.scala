@@ -42,13 +42,8 @@ object BrachaToueg {
 
                 Thread.sleep(880)
 
-                val in = incomingRequests
-                val out = outgoingRequests
-                val outReq = out.size
-                val remainingAcks = in.size
-                val remainingDone = out.size
-
-                detection(pId, in, out, outReq, remainingAcks = remainingAcks, remainingDone = remainingDone, isInitiator = isInitiator)
+                detection(pId, incomingRequests, outgoingRequests, outgoingRequests.size,
+                  remainingAcks = incomingRequests.size, remainingDone = outgoingRequests.size, isInitiator = isInitiator)
               } else
                 Behaviors.same
 
