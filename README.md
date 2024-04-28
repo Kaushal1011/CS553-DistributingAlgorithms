@@ -105,5 +105,5 @@ The below image shows the telemetry data for the simulation run with the `mutexs
 - Touegs Algorithm - Floyd Warshall Algorithm in Distributed Setting
 - Frederickson Algorithm
 
-> [Routing Plans](./routingsimplanrun.json)
+> [Routing Plans](./routingsimplan.json)
 
