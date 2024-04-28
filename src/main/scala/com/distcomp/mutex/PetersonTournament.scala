@@ -54,6 +54,7 @@ object PetersonTournament {
     Behaviors.receive( (context, message) => {
       message match {
         case StartCriticalSectionRequest =>
+          // start critical section request
           context.log.info(s"${context.self.path.name} starting critical section request")
           val sharedMemoryRef = sharedMemory.getOrElse(null)
           if (sharedMemoryRef == null) {
@@ -74,7 +75,8 @@ object PetersonTournament {
           Behaviors.same
 
         case ReadFlagAndTurnTournamentReply(flag, wait, internalNode) =>
-
+          // read flag and turn reply from shared memory and act accordingly
+          // spin on current node or go up the tree or enter critical section
           val nodeData = tournamentTree(context.self)
           val internalNodeID = nodeData.internalNodeID
           val ownBit = nodeData.ownBit
@@ -139,12 +141,14 @@ object PetersonTournament {
           }
 
         case EnterCriticalSection =>
+          // enter critical section
           context.log.info(s"${context.self.path.name} entering critical section")
           Thread.sleep(300)
           context.self ! ExitCriticalSection
           Behaviors.same
 
         case ExitCriticalSection =>
+          // exit critical section
           context.log.info(s"${context.self.path.name} exiting critical section")
           val sharedMemoryRef = sharedMemory.getOrElse(null)
           if (sharedMemoryRef == null) {
@@ -158,6 +162,7 @@ object PetersonTournament {
           val nodeToCheck = currentNodeSpin.getOrElse(internalNodeID)
           val ownBitToCheck = currentBit.getOrElse(ownBit)
 
+          // send all the messages in the queue so level below can continue
           messageQueue.foreach(mes => sharedMemoryRef ! mes)
 
           sharedMemoryRef ! SetFlagTournament(nodeToCheck, ownBitToCheck, flag = false)
@@ -165,6 +170,7 @@ object PetersonTournament {
           active(tournamentTree, sharedMemory, simulator, None, None, List.empty)
 
         case EnableSharedMemory(sharedMemory) =>
+          // enable shared memory
           active(tournamentTree, Some(sharedMemory), simulator, None, None)
 
         case _ => Behaviors.unhandled

@@ -22,6 +22,7 @@ object BakeryAlgorithm {
     Behaviors.receive((context, message) => {
       message match {
         case StartCriticalSectionRequest =>
+          // start critical section request
           context.log.info(s"${context.self.path.name} starting critical section request")
           val sharedMemoryRef = sharedMemory.getOrElse(null)
           if (sharedMemoryRef == null) {
@@ -34,6 +35,7 @@ object BakeryAlgorithm {
           Behaviors.same
 
         case SetChoosingReply(choosing) =>
+          // choosing is true if the node is choosing a number
           if (choosing) {
             val sharedMemoryRef = sharedMemory.getOrElse(null)
             if (sharedMemoryRef == null) {
@@ -48,6 +50,7 @@ object BakeryAlgorithm {
           }
 
         case ReadNumbersReply(numbers) =>
+          // read numbers to decide the next number
           val maxNumber = numbers.values.max
           val newNumber = maxNumber + 1
           val sharedMemoryRef = sharedMemory.getOrElse(null)
@@ -63,6 +66,7 @@ object BakeryAlgorithm {
           Behaviors.same
 
         case GetChoosingAndNumberReply(choosings, numbers) =>
+          // get choosing and number of all nodes to decide if the node can enter critical section
           context.log.info(s"Node ${context.self.path.name} unique numbers: ${numbers.values.toSet}")
 
           val sharedMemoryRef = sharedMemory.getOrElse(null)
@@ -105,12 +109,14 @@ object BakeryAlgorithm {
           }
 
         case EnterCriticalSection =>
+          // enter critical section
           context.log.info(s"${context.self.path.name} entering critical section")
           Thread.sleep(1000)
           context.self ! ExitCriticalSection
           Behaviors.same
 
         case ExitCriticalSection =>
+          // exit critical section
           context.log.info(s"${context.self.path.name} exiting critical section")
           val sharedMemoryRef = sharedMemory.getOrElse(null)
           if (sharedMemoryRef == null) {
@@ -122,6 +128,7 @@ object BakeryAlgorithm {
           Behaviors.same
 
         case EnableSharedMemory(sharedMemory) =>
+          // enable shared memory
           active(nodes, Some(sharedMemory), simulator)
 
         case _ => Behaviors.unhandled

@@ -7,6 +7,8 @@ This document provides a detailed explanation of the mutex algorithms implemente
 The mutex module in this project implements various mutual exclusion algorithms. These algorithms are used to prevent concurrent processes from accessing shared resources simultaneously, thus avoiding potential conflicts or inconsistencies.
 All the algorithms implemented from the mutual exclusion chapter of the textbook ["Distributed Algorithms, Second Edition An Intuitive Approach, W Fokik"](https://mitpress.mit.edu/9780262037662/distributed-algorithms/) which provides an intuitive approach to learning them by summarising and elaborating on individual paper.
 
+
+
 ## Algorithms Implemented
 
 The following algorithms are implemented in this project:
@@ -19,6 +21,19 @@ The following algorithms are implemented in this project:
 7. Bakery Algorithm
 8. Test and Set Lock Algorithm
 9. Test and Test and Set Lock Algorithm
+
+### [Simulation Plan](../mutexsimplan.json)
+
+1. Ricart Agarwal
+2. Ricart Agarwal Carvalho Extension
+3. Raymonds Algorithm
+4. Agrawal El Abbadi
+5. Peterson's Algorithm (Tournament for N Processes) 26 Processes
+6. Peterson's Algorithm (Tournament for N Processes) 8 Processes
+7. Peterson's Algorithm (Two Process)
+8. Bakery Algorithm
+9. Test and Set Lock Algorithm
+10. Test and Test and Set Lock Algorithm
 
 ## Algorithm Details
 

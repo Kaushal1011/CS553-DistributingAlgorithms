@@ -49,7 +49,7 @@ object SimulatorActor {
     // If additionalParameters has various types, you might need a custom Reads
   }
 
-  // Function to handle algorithm execution logic
+  // Function to handle algorithm execution logic for each distributed algorithm
   private def executeAlgorithm(
                         step: SimulationStep,
                         nodes: Set[ActorRef[Message]],
@@ -364,7 +364,8 @@ object SimulatorActor {
     }
   }
 
-
+  // function to handle algorithm execution logic for each distributed algorithm when the distributed algorithm requires two steps
+  // first step can be building spanning tree etc and second step can be executing the actual algorithm during simulation
   private def secondStepExecuteAlgorithm(
                                           step: SimulationStep,
                                           nodes: Set[ActorRef[Message]],
@@ -401,7 +402,7 @@ object SimulatorActor {
   }
 
 
-
+  // Behavior after all nodes are registered and ready to start simulation
   private def behaviorAfterInit(
                                   nodes: Set[ActorRef[Message]],
                                   readyNodes: Set[String],
@@ -506,7 +507,7 @@ object SimulatorActor {
       }
     }
 
-
+  // Behavior to handle simulation setup and start
   private def behavior(nodes: Set[ActorRef[Message]], readyNodes: Set[String], simulationSteps: List[SimulationStep]): Behavior[SimulatorMessage] =
     Behaviors.receive { (context, message) =>
       message match {

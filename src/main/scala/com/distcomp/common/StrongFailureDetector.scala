@@ -6,6 +6,7 @@ import akka.actor.typed.scaladsl.Behaviors
 
 import scala.concurrent.duration._
 
+// failure detector that uses strong completeness
 object StrongFailureDetector {
   def apply(lastHeartbeats: Map[ActorRef[Message], Long]): Behavior[Message] = Behaviors.setup { context =>
     active(lastHeartbeats, Set.empty, None)
