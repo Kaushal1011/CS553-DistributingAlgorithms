@@ -124,7 +124,7 @@ object NodeActor {
               EchoElection(context.self.path.name, edges.keySet, edges, simulator, timestamp)
             case "bracha-toueg" =>
               context.log.info("Switching to Bracha Toueg Algorithm")
-              BrachaToueg(context.self.path.name)
+              BrachaToueg(context.self.path.name, edges.keySet)
 
             case "chandy-misra" =>
               context.log.info("Switching the algorithm to Chandy-Misra in nodeActor")
