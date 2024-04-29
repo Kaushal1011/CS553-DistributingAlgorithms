@@ -15,11 +15,12 @@ object BrachaToueg {
 
     ctx => {
       ctx.log.info("Creating Deadlock node : {}", pId)
-      active(pId, edges = edges)
+      active(pId, edges = edges) // setting the initial values
     }
 
   }
 
+  // the default behavior when the node has not yet begun deadlock detection
   def active(pId: String, incomingRequests: mutable.Set[ActorRef[Message]] = mutable.Set.empty,
              outgoingRequests: mutable.Set[ActorRef[Message]] = mutable.Set.empty,
              edges: Set[ActorRef[Message]] = Set.empty, deadlockStarted: Boolean = false): Behavior[Message] = Behaviors.setup {
@@ -29,18 +30,18 @@ object BrachaToueg {
       Behaviors.receiveMessage {
         msg => {
           msg match {
-            case ActivateNode(outgoingRequests) =>
+            case ActivateNode(outgoingRequests) => // sets the outgoing requests for this node.
               active(pId, mutable.Set.empty, outgoingRequests, edges)
 
-            case StartDetection(isInitiator) =>
+            case StartDetection(isInitiator, time) => // Starts the deadlock detection process if all requests haven't been granted yet and no other node has initiated it yet.
 
               if (!deadlockStarted) {
                 context.log.info("Starting deadlock detection - {}", pId)
 
-                for (e <- edges)
-                  e ! StartDetection(false)
+                for (e <- edges) // send a message to all neighbours to start the deadlock detection processing without making then the initiator
+                  e ! StartDetection(isInitiator = false, math.max(30, time - 30))
 
-                Thread.sleep(880)
+                Thread.sleep(time) // sleep for some time so that other processes can take snapshots and finalize.
 
                 detection(pId, incomingRequests, outgoingRequests, outgoingRequests.size,
                   remainingAcks = incomingRequests.size, remainingDone = outgoingRequests.size, isInitiator = isInitiator)
@@ -48,33 +49,44 @@ object BrachaToueg {
                 Behaviors.same
 
             case StartProcessing() =>
+              // Send a message requesting all nodes to grant some resource to current node
               for (req <- outgoingRequests)
                 req ! ResourceRequest(context.self, snapshotTaken = false)
 
-              context.log.info("{} sleeping for 15s before starting deadlock detection", pId)
-              Thread.sleep(1500)
+              // Wait for node to receive messages before checking whether we need to start deadlock detection
+              context.log.info("{} sleeping for 10s to receive requests before starting deadlock detection", pId)
+              Thread.sleep(1000)
               context.log.info("{} has woken up", pId)
 
               if (!deadlockStarted)
                 if (outgoingRequests.nonEmpty)
-                  context.self ! StartDetection(true)
+                  context.self ! StartDetection(isInitiator = true, 750) // if deadlock detection hasn't been initiated by some other process and there are pending requests, start deadlock detection
+
               Behaviors.same
+
             case ResourceRequest(from, snapshotTaken) =>
+
               context.log.info("{} received a request from {}", context.self, from)
 
               if (outgoingRequests.isEmpty) {
+                // Wait for a random number of seconds (to simulate internal processes) before granting the request if the node is free
                 Thread.sleep(Random.nextInt(80))
-                from ! ResourceGrant(context.self, snapshotTaken)
+                from !ResourceGrant(context.self, snapshotTaken)
+                Behaviors.same
               } else {
-                // TODO:
+                // If request cannot be granted, add it to incoming requests.
+                incomingRequests.add(from)
+                active(pId, incomingRequests, outgoingRequests, edges, deadlockStarted)
               }
-              Behaviors.same
+
             case ResourceGrant(from, _) =>
               context.log.info("Received resource grant from {}", from)
 
+              // remove from outgoing requests
               if (outgoingRequests.contains(from))
                 outgoingRequests.remove(from)
 
+              // If no more outgoing requests, grant all requests received by this node
               if (outgoingRequests.isEmpty) {
 
                 for (req <- incomingRequests)
@@ -92,6 +104,7 @@ object BrachaToueg {
     }
   }
 
+  // Deadlock detection behaviour where the node now behaves as a node of a waitForGraph
   def detection(pId: String, in: mutable.Set[ActorRef[Message]], out: mutable.Set[ActorRef[Message]],
                 outReq: Int, free: Boolean = false, notified: Boolean = false,
                 remainingAcks: Int = 0, remainingDone: Int = 0, isInitiator: Boolean = false,
@@ -105,18 +118,19 @@ object BrachaToueg {
         message => {
 
           message match {
-
+            // Handling a notify message
             case Notify(from) =>
               context.log.info("{} has received notify from {}", pId, from)
 
               if (!notified) {
-
+                // If it hasn't been notified, do:
+                // Send the notify message to all outGoing edges
                 for (actor <- out) actor ! Notify(context.self)
 
                 if (outReq == 0) {
 
                   context.log.info("{} is Granting!", pId)
-
+                  // If there are no outGoin requests, grant all incoming Requests
                   for (nd <- in)
                     nd ! Grant(context.self)
 
@@ -129,6 +143,7 @@ object BrachaToueg {
 
               Behaviors.same
 
+            // Handling a grant message
             case Grant(from) =>
               if (outReq > 0) {
                 if (outReq == 1) {
@@ -140,11 +155,12 @@ object BrachaToueg {
                   from ! Acknowledgment(context.self)
                   Behaviors.same
                 }
-              } else {
+              } else { // Send an Acknowledgment if
                 from ! Acknowledgment(context.self)
                 Behaviors.same
               }
 
+            // Handling an acknowledgment
             case Acknowledgment(_) =>
               // remainingAcks -= 1
 
@@ -160,6 +176,7 @@ object BrachaToueg {
               detection(pId, in, out, outReq, free, notified, remainingAcks - 1, remainingDone,
                 isInitiator, firstNotifier, lastGranter)
 
+            // Handling a done message
             case Done(_) =>
 
               if (remainingDone == 0) {

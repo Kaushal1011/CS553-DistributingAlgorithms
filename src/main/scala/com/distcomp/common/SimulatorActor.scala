@@ -2,7 +2,7 @@ package com.distcomp.common
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import com.distcomp.common.BrachaMessages.ActivateNode
+import com.distcomp.common.BrachaMessages.{ActivateNode, StartProcessing}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
@@ -288,9 +288,8 @@ object SimulatorActor {
           }
 
           randomDeps.foreach(f => {
-            if (dependencies(f).contains(no)) {
+            if (dependencies(f).contains(no))
               dependencies(f).remove(no)
-            }
           })
         }
 
@@ -298,9 +297,13 @@ object SimulatorActor {
           no ! ActivateNode(dependencies(no))
         }
 
+        for (no <- nodes)
+          no ! StartProcessing()
+
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
 
-      case "tree-election" =>
+      case "tree-election"
+      =>
         context.log.info("Executing Tree Election Algorithm")
 
         // randomly take x initiators and send initate message to start election
@@ -308,7 +311,8 @@ object SimulatorActor {
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
 
-      case "tree" =>
+      case "tree"
+      =>
         context.log.info("Executing Tree Algorithm")
         Thread.sleep(1000)
         // shuffle the nodes

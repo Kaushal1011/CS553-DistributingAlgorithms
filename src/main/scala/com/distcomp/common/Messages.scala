@@ -231,7 +231,7 @@ object BrachaMessages {
   final case class Done(override val from: ActorRef[Message]) extends WaitForMessage
 
 
-  final case class StartDetection(isInitiator: Boolean) extends Message
+  final case class StartDetection(isInitiator: Boolean, sleepTime: Int = 500) extends Message
 
   final case class ActivateNode(outgoingRequests: mutable.Set[ActorRef[Message]]) extends Message
 
