@@ -2,7 +2,7 @@ package com.distcomp.common
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import com.distcomp.common.BrachaMessages.{ActivateNode, EnableBrachaBehaviour, StartProcessing}
+import com.distcomp.common.BrachaMessages.{ActivateNode, StartProcessing}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
