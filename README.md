@@ -82,13 +82,6 @@ sbt clean compile test
 
 > [Simulation Plan](./mutexsimplan.json)
 
-
-### Telemetry 
-
-The below image shows the telemetry data for the simulation run with the `mutexsimplan.json` simulation plan.
-
-![Mutex Telemetry](docs/assets/mutexsimplanrun.png)
-
 ### Election
 - Chang Roberts 
 - Franklin 
@@ -106,4 +99,11 @@ The below image shows the telemetry data for the simulation run with the `mutexs
 - Frederickson Algorithm
 
 > [Routing Plans](./routingsimplan.json)
+
+
+### Telemetry 
+
+The below image shows the telemetry data for the simulation run with the `mutexsimplan.json` simulation plan.
+
+![Mutex Telemetry](docs/assets/mutexsimplanrun.png)
 
