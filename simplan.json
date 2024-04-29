@@ -4,41 +4,13 @@
       "dotFilePath": "ExampleNetwork.dot",
       "isDirected": false,
       "createRing": false,
-      "createClique": true,
-      "createBinTree": false,
-      "enableFailureDetector": false,
-      "algorithm": "ricart-agarwala",
-      "additionalParameters": {
-        "initiators": 5,
-        "additional": 7,
-        "kill": 1
-      }
-    },
-    {
-        "dotFilePath": "ExampleNetwork.dot",
-        "isDirected": false,
-        "createRing": false,
-        "createClique": true,
-        "createBinTree": false,
-        "enableFailureDetector": false,
-        "algorithm": "ra-carvalho",
-        "additionalParameters": {
-            "initiators": 5,
-            "additional": 10,
-            "kill": 1
-        }
-    },
-    {
-      "dotFilePath": "ExampleNetwork.dot",
-      "isDirected": false,
-      "createRing": false,
       "createClique": false,
       "createBinTree": false,
       "enableFailureDetector": false,
-      "algorithm": "raymonds-algo",
+      "algorithm": "chandy-misra",
       "additionalParameters": {
-        "initiators": 5,
-        "additional": 0,
+        "l": 3,
+        "totalNodes": 26,
         "kill": 1
       }
     },
@@ -47,12 +19,68 @@
       "isDirected": false,
       "createRing": false,
       "createClique": false,
-      "createBinTree": true,
-      "enableFailureDetector": true,
-      "algorithm": "agrawal-elabbadi",
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "merlin-segall",
       "additionalParameters": {
-        "initiators": 5,
-        "additional": 0,
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "frederickson",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "MyDotFile.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "chandy-misra",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "MyDotFile.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "merlin-segall",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "MyDotFile.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "frederickson",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
         "kill": 1
       }
     },

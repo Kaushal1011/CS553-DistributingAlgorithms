@@ -1,0 +1,60 @@
+{
+  "steps": [
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "chandy-misra",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "merlin-segall",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "touegs",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    },
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "frederickson",
+      "additionalParameters": {
+        "l": 3,
+        "totalNodes": 26,
+        "kill": 1
+      }
+    }
+    ]
+}

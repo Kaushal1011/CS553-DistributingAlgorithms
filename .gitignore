@@ -12,3 +12,5 @@ target/
 .bsp
 
 lightbend.sbt
+
+metals.sbt

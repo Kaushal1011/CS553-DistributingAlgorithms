@@ -118,6 +118,7 @@ object TestAndSetSharedMemProtocol {
 }
 
 
+
 object RicartaAgarwalProtocol {
 
   case class RequestCS(timestamp: Long, from: ActorRef[Message]) extends Message
@@ -162,7 +163,9 @@ object ElectionProtocol {
   case object StartElection extends Message
 
   case object StartNextRound extends Message
+
   case object wakeUpPhase extends Message
+
   case object Winner extends Message
 
   case class VictoryMessage(leaderId: String) extends Message
@@ -191,19 +194,25 @@ object DolevKlaweRodehProtocol {
 
 }
 
-object TreeElectionProtocol{
+object TreeElectionProtocol {
   case class ElectionMessageTE(candidateId: String, from: ActorRef[Message]) extends Message
+
   case class WakeUpPhaseMessage(fromNodeId: String, node: ActorRef[Message]) extends Message
-//  case object Initiate extends Message
-//  case class wakeUpPhaseMessage(candidateId: String, from: ActorRef[Message]) extends Message
-case object WakeUpPhase extends Message
-  case class MakeParent(nodeId:String, from: ActorRef[Message], maxChild: String, maxChildRef: ActorRef[Message]) extends Message
-  case class Decide(nodeId:String, from: ActorRef[Message], maxChild: String, maxChildRef:ActorRef[Message]) extends Message
+
+  //  case object Initiate extends Message
+  //  case class wakeUpPhaseMessage(candidateId: String, from: ActorRef[Message]) extends Message
+  case object WakeUpPhase extends Message
+
+  case class MakeParent(nodeId: String, from: ActorRef[Message], maxChild: String, maxChildRef: ActorRef[Message]) extends Message
+
+  case class Decide(nodeId: String, from: ActorRef[Message], maxChild: String, maxChildRef: ActorRef[Message]) extends Message
 }
 
 object TreeProtocol {
-  case class MakeParent(nodeId:String, from: ActorRef[Message]) extends Message
-  case class Decide(nodeId:String, from: ActorRef[Message]) extends Message
+  case class MakeParent(nodeId: String, from: ActorRef[Message]) extends Message
+
+  case class Decide(nodeId: String, from: ActorRef[Message]) extends Message
+
   case object Initiate extends Message
 
 }
@@ -222,9 +231,12 @@ object BrachaMessages {
 
   final case class Done(override val from: ActorRef[Message]) extends WaitForMessage
 
-  final case class StartDetection() extends Message
 
-  final case class EnableBrachaBehaviour(outgoingRequests: mutable.Set[ActorRef[Message]]) extends Message
+  final case class StartDetection(isInitiator: Boolean, sleepTime: Int = 500) extends Message
+
+  final case class ActivateNode(outgoingRequests: mutable.Set[ActorRef[Message]]) extends Message
+
+  final case class StartProcessing() extends Message
 
   final case class getStatus(override val from: ActorRef[Message]) extends WaitForMessage
 
@@ -243,3 +255,39 @@ object BrachaMessages {
 
 }
 
+
+object Routing {
+
+  case class StartRouting(initializer: String) extends Message
+
+  case class ShortestPathEstimate(distance: Int, sender: ActorRef[Message]) extends Message
+
+  case class Forward(distance: Int, from: ActorRef[Message], round: Int) extends Message
+
+  case class Explore(level: Int, from: ActorRef[Message]) extends Message
+
+  case class Reverse(level: Int, ack: Boolean, from: ActorRef[Message]) extends Message
+
+}
+
+object TouegProtocol {
+
+  // Message Definitions
+
+  case class  StartRoutingT(allNodes: Set[ActorRef[Message]], pivots: Map[Int, ActorRef[Message]]) extends Message
+  case class RequestRouting(round: Int, requester: ActorRef[Message]) extends Message
+  case class ProvideRoutingInfo(map: Map[ActorRef[Message],Int], from: ActorRef[Message]) extends Message
+  case object InitiateNextRoundT extends Message
+  case class SetAllNodes(allNodes: Set[ActorRef[Message]]) extends Message
+}
+
+
+object TerminationDetection {
+  sealed trait TerminationMessage extends Message
+  case object Acknowledgment extends TerminationMessage
+  case class Acknowledgment_true(parent: ActorRef[Message]) extends TerminationMessage
+  case class Acknowledgment_false(parent: ActorRef[Message]) extends TerminationMessage
+  case class ParentTerminated(sender: ActorRef[Message]) extends TerminationMessage
+  sealed trait ControlToken extends Message
+  case class Token(allClear: Boolean) extends ControlToken
+}

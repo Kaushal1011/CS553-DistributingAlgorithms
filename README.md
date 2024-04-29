@@ -82,6 +82,24 @@ sbt clean compile test
 
 > [Simulation Plan](./mutexsimplan.json)
 
+### Election
+- Chang Roberts 
+- Franklin 
+- Dolev Klawe Rodeh
+- Tree Election
+- Echo Election
+
+> [Election Plan](./electionSimPlan.json)
+
+
+### Routing
+- Chandy-Misra Algorithm with Djikstra-Scholten Termination
+- Merlin-Segall Algorithm 
+- Touegs Algorithm - Floyd Warshall Algorithm in Distributed Setting
+- Frederickson Algorithm
+
+> [Routing Plans](./routingsimplan.json)
+
 
 ### Telemetry 
 
