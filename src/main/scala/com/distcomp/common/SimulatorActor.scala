@@ -2,7 +2,7 @@ package com.distcomp.common
 
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{ActorContext, Behaviors}
-import com.distcomp.common.BrachaMessages.{ActivateNode, StartProcessing}
+import com.distcomp.common.BrachaMessages.{ActivateNode, EnableBrachaBehaviour, StartProcessing}
 import com.distcomp.common.SimulatorProtocol._
 import com.distcomp.common.SpanningTreeProtocol.InitiateSpanningTree
 import com.distcomp.common.MutexProtocol._
@@ -13,6 +13,9 @@ import com.distcomp.common.TreeElectionProtocol._
 import com.distcomp.common.TreeProtocol._
 import com.distcomp.sharedmemory.{BakerySharedMemActor, PetersonSharedMemActor, PetersonTournamentSharedMemActor, TestAndSetSharedMemActor}
 
+import com.distcomp.routing.{ChandyMisra, MerlinSegall}
+import com.distcomp.common.Routing._
+import com.distcomp.common.TouegProtocol._
 
 import scala.io.Source
 import play.api.libs.json.{Format, Json, Reads}
@@ -54,7 +57,8 @@ object SimulatorActor {
                                 context: ActorContext[SimulatorMessage],
                                 readyNodes: Set[String],
                                 simulationSteps: List[SimulationStep],
-                                intialiser: ActorRef[Message]
+                                intialiser: ActorRef[Message],
+                                numNodes: Option[Int] = None
                               ): Behavior[SimulatorMessage] = {
     step.algorithm match {
       case "ricart-agarwala" =>
@@ -275,7 +279,7 @@ object SimulatorActor {
 
         val dependencies = mutable.Map.empty[ActorRef[Message], mutable.Set[ActorRef[Message]]]
 
-        // Selecting a random number of dependencies for each nodes
+        // Selecting a random number of dependecies for each nodes
         for (no <- nodes) {
           var dep = Random.nextInt(tot / 3)
 
@@ -288,8 +292,9 @@ object SimulatorActor {
           }
 
           randomDeps.foreach(f => {
-            if (dependencies(f).contains(no))
+            if (dependencies(f).contains(no)) {
               dependencies(f).remove(no)
+            }
           })
         }
 
@@ -297,13 +302,13 @@ object SimulatorActor {
           no ! ActivateNode(dependencies(no))
         }
 
-        for (no <- nodes)
+        for (no <- nodes) {
           no ! StartProcessing()
+        }
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
 
-      case "tree-election"
-      =>
+      case "tree-election" =>
         context.log.info("Executing Tree Election Algorithm")
 
         // randomly take x initiators and send initate message to start election
@@ -311,8 +316,7 @@ object SimulatorActor {
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
 
-      case "tree"
-      =>
+      case "tree" =>
         context.log.info("Executing Tree Algorithm")
         Thread.sleep(1000)
         // shuffle the nodes
@@ -320,6 +324,43 @@ object SimulatorActor {
         nodes.foreach(node => node ! Initiate)
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
+
+      case "chandy-misra" =>
+        Thread.sleep(1000)
+        context.log.info("Executing Chandy-Misra Algorithm")
+        nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
+
+      case "merlin-segall" =>
+
+        context.log.info("Waiting for spanning tree to complete.")
+        nodes.take(1).foreach(node => node ! InitiateSpanningTree)
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1, Some(readyNodes.size))
+
+      case "toueg" =>
+        context.log.info("Executing Toueg Algorithm")
+        Thread.sleep(1000)
+
+        // make a map of shuffled nodes with int from 0 to n-1
+        val shuffledNodes = Random.shuffle(nodes)
+        val pivots = shuffledNodes.zipWithIndex.map { case (node, index) => index -> node }.toMap
+
+        nodes.foreach(node => node ! SetAllNodes(nodes))
+        Thread.sleep(1000)
+
+        nodes.foreach(node => node ! StartRoutingT(nodes, pivots))
+
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, nodes.size)
+
+      case "frederickson" =>
+        Thread.sleep(1000)
+        context.log.info("Executing Frederickson Algorithm")
+        nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
+      //
+
       case _ =>
         context.log.info("Algorithm not recognized in Simulator .")
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
@@ -353,6 +394,13 @@ object SimulatorActor {
         }
 
         behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, numInitiators + additional)
+
+      case "merlin-segall" =>
+        context.log.info("Executing Merlin-Segall Algorithm")
+        nodes.take(1).foreach(node => node ! StartRouting(node.path.name))
+
+
+        behaviorAfterInit(nodes, readyNodes, simulationSteps, intialiser, 1)
     }
   }
 
@@ -363,7 +411,8 @@ object SimulatorActor {
                                  readyNodes: Set[String],
                                  simulationSteps: List[SimulationStep],
                                  intialiser: ActorRef[Message],
-                                 repliesToWait: Int = 0
+                                 repliesToWait: Int = 0,
+                                 numNodes: Option[Int] = None
                                ): Behavior[SimulatorMessage] =
     Behaviors.receive { (context, message) =>
       message match {
@@ -381,7 +430,7 @@ object SimulatorActor {
             nodes.foreach(_ ! SwitchToAlgorithm(step.algorithm, step.additionalParameters))
             val numInitiators = step.additionalParameters.getOrElse("initiators", 1)
             val additional = step.additionalParameters.getOrElse("additional", 0)
-            executeAlgorithm(step, nodes, numInitiators, additional, context, updatedReadyNodes, simulationSteps, intialiser)
+            executeAlgorithm(step, nodes, numInitiators, additional, context, updatedReadyNodes, simulationSteps, intialiser, numNodes)
           } else {
             behaviorAfterInit(nodes, updatedReadyNodes, simulationSteps, intialiser, repliesToWait)
           }
@@ -444,7 +493,7 @@ object SimulatorActor {
 
           if (remainingSteps.isEmpty) {
             context.log.info("Simulation complete.")
-            // stop the system
+            //            stop the system
 
             Behaviors.stopped
           }

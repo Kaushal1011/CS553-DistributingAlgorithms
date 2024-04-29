@@ -82,13 +82,6 @@ sbt clean compile test
 
 > [Simulation Plan](./mutexsimplan.json)
 
-
-### Telemetry 
-
-The below image shows the telemetry data for the simulation run with the `mutexsimplan.json` simulation plan.
-
-![Mutex Telemetry](docs/assets/mutexsimplanrun.png)
-
 ### Election
 - Chang Roberts 
 - Franklin 
@@ -96,5 +89,21 @@ The below image shows the telemetry data for the simulation run with the `mutexs
 - Tree Election
 - Echo Election
 
-> [Election Plan](./electionSimPlan)
+> [Election Plan](./electionSimPlan.json)
+
+
+### Routing
+- Chandy-Misra Algorithm with Djikstra-Scholten Termination
+- Merlin-Segall Algorithm 
+- Touegs Algorithm - Floyd Warshall Algorithm in Distributed Setting
+- Frederickson Algorithm
+
+> [Routing Plans](./routingsimplan.json)
+
+
+### Telemetry 
+
+The below image shows the telemetry data for the simulation run with the `mutexsimplan.json` simulation plan.
+
+![Mutex Telemetry](docs/assets/mutexsimplanrun.png)
 

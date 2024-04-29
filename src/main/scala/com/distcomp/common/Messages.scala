@@ -118,6 +118,7 @@ object TestAndSetSharedMemProtocol {
 }
 
 
+
 object RicartaAgarwalProtocol {
 
   case class RequestCS(timestamp: Long, from: ActorRef[Message]) extends Message
@@ -254,3 +255,39 @@ object BrachaMessages {
 
 }
 
+
+object Routing {
+
+  case class StartRouting(initializer: String) extends Message
+
+  case class ShortestPathEstimate(distance: Int, sender: ActorRef[Message]) extends Message
+
+  case class Forward(distance: Int, from: ActorRef[Message], round: Int) extends Message
+
+  case class Explore(level: Int, from: ActorRef[Message]) extends Message
+
+  case class Reverse(level: Int, ack: Boolean, from: ActorRef[Message]) extends Message
+
+}
+
+object TouegProtocol {
+
+  // Message Definitions
+
+  case class  StartRoutingT(allNodes: Set[ActorRef[Message]], pivots: Map[Int, ActorRef[Message]]) extends Message
+  case class RequestRouting(round: Int, requester: ActorRef[Message]) extends Message
+  case class ProvideRoutingInfo(map: Map[ActorRef[Message],Int], from: ActorRef[Message]) extends Message
+  case object InitiateNextRoundT extends Message
+  case class SetAllNodes(allNodes: Set[ActorRef[Message]]) extends Message
+}
+
+
+object TerminationDetection {
+  sealed trait TerminationMessage extends Message
+  case object Acknowledgment extends TerminationMessage
+  case class Acknowledgment_true(parent: ActorRef[Message]) extends TerminationMessage
+  case class Acknowledgment_false(parent: ActorRef[Message]) extends TerminationMessage
+  case class ParentTerminated(sender: ActorRef[Message]) extends TerminationMessage
+  sealed trait ControlToken extends Message
+  case class Token(allClear: Boolean) extends ControlToken
+}

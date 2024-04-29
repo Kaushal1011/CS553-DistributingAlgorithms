@@ -1,0 +1,16 @@
+{
+  "steps": [
+    {
+      "dotFilePath": "ExampleNetwork.dot",
+      "isDirected": false,
+      "createRing": false,
+      "createClique": false,
+      "createBinTree": false,
+      "enableFailureDetector": false,
+      "algorithm": "chandy-misra",
+      "additionalParameters": {
+        "kill": 1
+      }
+    }
+    ]
+}
